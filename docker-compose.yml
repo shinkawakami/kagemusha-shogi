@@ -12,6 +12,23 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - db
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+    command: ./mvnw spring-boot:run
+    depends_on:
+      - db
 volumes:
   db-data:
