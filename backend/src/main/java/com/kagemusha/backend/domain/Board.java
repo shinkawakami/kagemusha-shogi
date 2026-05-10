@@ -9,8 +9,8 @@ public class Board {
 
     private final List<Piece> pieces;
 
-    public Board() {
-        this.pieces = createInitialPieces();
+    public Board(List<Piece> pieces) {
+        this.pieces = pieces;
     }
 
     public List<Piece> getPieces() {
@@ -26,7 +26,7 @@ public class Board {
                 .findFirst();
     }
 
-    private List<Piece> createInitialPieces() {
+    public static Board createInitialBoard() {
         List<Piece> pieces = new ArrayList<>();
 
         // =====================
@@ -77,6 +77,6 @@ public class Board {
         pieces.add(new Piece(PieceType.KEIMA, PlayerType.SENTE, new Position(9, 8)));
         pieces.add(new Piece(PieceType.KYO, PlayerType.SENTE, new Position(9, 9)));
 
-        return pieces;
+        return new Board(pieces);
     }
 }
