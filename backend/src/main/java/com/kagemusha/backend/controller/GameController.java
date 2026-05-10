@@ -1,6 +1,7 @@
 package com.kagemusha.backend.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kagemusha.backend.domain.Game;
@@ -18,8 +19,8 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping
-    public Game createGame() {
-        return gameService.createGame();
+    @GetMapping("/{id}")
+    public Game getGame(@PathVariable Long id) {
+        return gameService.getGame(id);
     }
 }
