@@ -4,8 +4,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.kagemusha.backend.controller.request.MoveRequest;
 import com.kagemusha.backend.controller.response.GameData;
 import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
@@ -54,6 +56,24 @@ public class GameController {
                 game.getWinner() == null ? null : game.getWinner().name(),
                 game.getBoardSfen(),
                 null
+        );
+
+        return ResponseEntity.ok(new GameResponse(true, data));
+    }
+
+    @PostMapping("/{id}/moves")
+    public ResponseEntity<GameResponse> move(
+            @PathVariable Long id,
+            @RequestBody MoveRequest request
+    ) {
+        Game game = gameService.move(id, request.getMove());
+
+        GameData data = new GameData(
+                game.getId(),
+                game.getStatus().name(),
+                game.getWinner() == null ? null : game.getWinner().name(),
+                game.getBoardSfen(),
+                request.getMove()
         );
 
         return ResponseEntity.ok(new GameResponse(true, data));

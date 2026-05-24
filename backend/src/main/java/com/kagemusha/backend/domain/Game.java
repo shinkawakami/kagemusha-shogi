@@ -23,6 +23,45 @@ public class Game {
         return new Game(id, board, currentTurn);
     }
 
+    public void move(String moveText) {
+        if (status == GameStatus.FINISHED) {
+            throw new IllegalStateException("すでに終了したゲームです");
+        }
+
+        SfenMove move = SfenMoveParser.parse(moveText);
+
+        Piece movingPiece = board.getPiece(move.getFrom());
+
+        if (movingPiece == null) {
+            throw new IllegalArgumentException("移動元に駒がありません");
+        }
+
+        if (movingPiece.getOwner() != currentTurn) {
+            throw new IllegalArgumentException("現在の手番の駒ではありません");
+        }
+
+        Piece targetPiece = board.getPiece(move.getTo());
+
+        if (targetPiece != null && targetPiece.getOwner() == currentTurn) {
+            throw new IllegalArgumentException("移動先に味方の駒があります");
+        }
+
+        Piece pieceAfterMove = movingPiece;
+
+        if (move.isPromote()) {
+            pieceAfterMove = new Piece(
+                    movingPiece.getType(),
+                    movingPiece.getOwner(),
+                    true
+            );
+        }
+
+        board.setPiece(move.getTo(), pieceAfterMove);
+        board.removePiece(move.getFrom());
+
+        switchTurn();
+    }
+
     public Long getId() {
         return id;
     }
@@ -43,8 +82,8 @@ public class Game {
         return winner;
     }
 
-    public String getSfen() {
-        return SfenConverter.fromBoard(board, currentTurn);
+    public String getBoardSfen() {
+        return SfenConverter.fromBoardOnly(board);
     }
 
     public void switchTurn() {
@@ -54,9 +93,5 @@ public class Game {
     public void finish(PlayerType winner) {
         this.status = GameStatus.FINISHED;
         this.winner = winner;
-    }
-
-    public String getBoardSfen() {
-        return SfenConverter.fromBoardOnly(board);
     }
 }
