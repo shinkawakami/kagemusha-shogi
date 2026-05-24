@@ -1,9 +1,13 @@
 package com.kagemusha.backend.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.kagemusha.backend.controller.response.GameData;
+import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.service.GameService;
 
@@ -19,8 +23,39 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    /**
+     * 新しいゲーム作成
+     */
+    @PostMapping
+    public ResponseEntity<GameResponse> createGame() {
+        Game game = gameService.createGame();
+
+        GameData data = new GameData(
+                game.getId(),
+                game.getStatus().name(),
+                game.getWinner() == null ? null : game.getWinner().name(),
+                game.getBoardSfen(),
+                null
+        );
+
+        return ResponseEntity.ok(new GameResponse(true, data));
+    }
+
+    /**
+     * ゲーム取得
+     */
     @GetMapping("/{id}")
-    public Game getGame(@PathVariable Long id) {
-        return gameService.getGame(id);
+    public ResponseEntity<GameResponse> getGame(@PathVariable Long id) {
+        Game game = gameService.getGame(id);
+
+        GameData data = new GameData(
+                game.getId(),
+                game.getStatus().name(),
+                game.getWinner() == null ? null : game.getWinner().name(),
+                game.getBoardSfen(),
+                null
+        );
+
+        return ResponseEntity.ok(new GameResponse(true, data));
     }
 }

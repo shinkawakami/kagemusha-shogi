@@ -2,22 +2,17 @@ package com.kagemusha.backend.domain;
 
 public class Piece {
 
-    private PieceType type;
-    private PlayerType owner;
-    private Position position;
-    private boolean promoted;
+    private final PieceType type;
+    private final PlayerType owner;
+    private final boolean promoted;
 
-    public Piece(PieceType type, PlayerType owner, Position position) {
-        this.type = type;
-        this.owner = owner;
-        this.position = position;
-        this.promoted = false;
+    public Piece(PieceType type, PlayerType owner) {
+        this(type, owner, false);
     }
 
-    public Piece(PieceType type, PlayerType owner, Position position, boolean promoted) {
+    public Piece(PieceType type, PlayerType owner, boolean promoted) {
         this.type = type;
         this.owner = owner;
-        this.position = position;
         this.promoted = promoted;
     }
 
@@ -25,31 +20,21 @@ public class Piece {
         return type;
     }
 
-    public void setType(PieceType type) {
-        this.type = type;
-    }
-
     public PlayerType getOwner() {
         return owner;
-    }
-
-    public void setOwner(PlayerType owner) {
-        this.owner = owner;
-    }
-
-    public Position getPosition() {
-        return position;
-    }
-
-    public void setPosition(Position position) {
-        this.position = position;
     }
 
     public boolean isPromoted() {
         return promoted;
     }
 
-    public void setPromoted(boolean promoted) {
-        this.promoted = promoted;
+    public String toSfenSymbol() {
+        String symbol = type.getSfenSymbol();
+
+        if (owner == PlayerType.GOTE) {
+            symbol = symbol.toLowerCase();
+        }
+
+        return promoted ? "+" + symbol : symbol;
     }
 }
