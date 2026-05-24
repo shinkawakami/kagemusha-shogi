@@ -30,21 +30,9 @@ public class Game {
 
         SfenMove move = SfenMoveParser.parse(moveText);
 
+        MoveValidator.validate(this, move);
+
         Piece movingPiece = board.getPiece(move.getFrom());
-
-        if (movingPiece == null) {
-            throw new IllegalArgumentException("移動元に駒がありません");
-        }
-
-        if (movingPiece.getOwner() != currentTurn) {
-            throw new IllegalArgumentException("現在の手番の駒ではありません");
-        }
-
-        Piece targetPiece = board.getPiece(move.getTo());
-
-        if (targetPiece != null && targetPiece.getOwner() == currentTurn) {
-            throw new IllegalArgumentException("移動先に味方の駒があります");
-        }
 
         Piece pieceAfterMove = movingPiece;
 
