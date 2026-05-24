@@ -23,4 +23,15 @@ public class Board {
     public Piece[][] getSquares() {
         return squares;
     }
+
+    public void movePiece(Position from, Position to) {
+        Piece movingPiece = getPiece(from);
+
+        if (movingPiece == null) {
+            throw new IllegalArgumentException("移動元に駒がありません");
+        }
+
+        setPiece(to, movingPiece);
+        removePiece(from);
+    }
 }

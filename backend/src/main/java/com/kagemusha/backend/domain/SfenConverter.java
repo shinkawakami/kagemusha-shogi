@@ -71,8 +71,8 @@ public class SfenConverter {
         for (int rowIndex = 0; rowIndex < 9; rowIndex++) {
             int emptyCount = 0;
 
-            for (int colIndex = 0; colIndex < 9; colIndex++) {
-                Position position = Position.fromArrayIndex(rowIndex, colIndex);
+            for (int col = 9; col >= 1; col--) {
+                Position position = new Position(rowIndex + 1, col);
                 Piece piece = board.getPiece(position);
 
                 if (piece == null) {
@@ -99,8 +99,6 @@ public class SfenConverter {
 
         sb.append(" ");
         sb.append(currentTurn.toSfenTurn());
-
-        // 持ち駒なし、手数1固定
         sb.append(" - 1");
 
         return sb.toString();

@@ -34,12 +34,10 @@ public class GameService {
         return game;
     }
 
-    /**
-     * 手番を切り替え（後で移動APIで使用）
-     */
-    public void switchTurn(Long gameId) {
+    public Game move(Long gameId, String moveText) {
         Game game = getGame(gameId);
-        game.switchTurn();
+        game.move(moveText);
+        return game;
     }
 
     /**
