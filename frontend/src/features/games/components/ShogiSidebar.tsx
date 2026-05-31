@@ -5,10 +5,12 @@ type Props = {
     sente: string[]
     gote: string[]
   }
+  currentTurn: 'b' | 'w'
 }
 
 export default function GameSidebar({
   capturedPieces,
+  currentTurn,
 }: Props) {
   return (
     <div className="w-full lg:w-72 border-l border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between">
@@ -42,10 +44,25 @@ export default function GameSidebar({
         </div>
 
         {/* 後手時間 */}
-        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
+        <div
+          className={`
+            bg-zinc-900 rounded-2xl p-5 border
+            ${
+              currentTurn === 'w'
+                ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)] animate-pulse'
+                : 'border-zinc-800'
+            }
+          `}
+        >
           <p className="text-zinc-400 mb-2">後手</p>
 
-          <div className="text-5xl font-black text-white">
+          <div
+            className={`text-5xl font-black ${
+              currentTurn === 'w'
+                ? 'text-yellow-300'
+                : 'text-white'
+            }`}
+          >
             08:41
           </div>
         </div>
@@ -54,10 +71,25 @@ export default function GameSidebar({
       {/* 下側 */}
       <div>
         {/* 先手時間 */}
-        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 mb-4">
+        <div
+          className={`
+            bg-zinc-900 rounded-2xl p-5 border mb-4
+            ${
+              currentTurn === 'b'
+                ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)] animate-pulse'
+                : 'border-zinc-800'
+            }
+          `}
+        >
           <p className="text-zinc-400 mb-2">先手</p>
 
-          <div className="text-5xl font-black text-amber-300">
+          <div
+            className={`text-5xl font-black ${
+              currentTurn === 'b'
+                ? 'text-yellow-300'
+                : 'text-white'
+            }`}
+          >
             09:52
           </div>
         </div>

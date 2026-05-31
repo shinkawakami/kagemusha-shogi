@@ -11,6 +11,7 @@ import { parseSFEN } from '@/lib/sfen'
 export default function GameScreen() {
   const params = useParams()
   const [board, setBoard] = useState<(string | null)[][]>([])
+  const [turn, setTurn] = useState<'b' | 'w'>('b')
   const [capturedPieces, setCapturedPieces] = useState({
     sente: [] as string[],
     gote: [] as string[],
@@ -29,6 +30,7 @@ export default function GameScreen() {
 
       setBoard(parsed.board)
       setCapturedPieces(parsed.captured)
+      setTurn(parsed.turn)
     }
 
     fetchGame()
@@ -50,6 +52,7 @@ export default function GameScreen() {
       {/* Sidebar */}
       <GameSidebar
         capturedPieces={capturedPieces}
+        currentTurn={turn}
       />
     </div>
   )
