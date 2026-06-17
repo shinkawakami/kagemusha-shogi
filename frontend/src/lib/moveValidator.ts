@@ -415,6 +415,7 @@ function isValidDropPosition(pos: Square, pieceLower: string, piece: string): bo
 
 /**
  * 駒が成可能かどうかを判定
+ * 将棋のルール：移動元が敵陣 OR 移動先が敵陣
  * @param piece 駒の文字列
  * @param from 移動元座標
  * @param to 移動先座標
@@ -436,15 +437,22 @@ export function canPromote(piece: string, from: Square, to: Square): boolean {
   }
   
   const isPlayerSente = piece === piece.toUpperCase()
+  const fromRowIdx = from.row.charCodeAt(0) - 'a'.charCodeAt(0)
   const toRowIdx = to.row.charCodeAt(0) - 'a'.charCodeAt(0)
   
-  // 先手：a～c行（敵陣3行）に駒がある場合
-  if (isPlayerSente && toRowIdx >= 0 && toRowIdx <= 2) {
+  // 先手：移動元がa～c行 OR 移動先がa～c行
+  if (isPlayerSente && (
+    (fromRowIdx >= 0 && fromRowIdx <= 2) || 
+    (toRowIdx >= 0 && toRowIdx <= 2)
+  )) {
     return true
   }
   
-  // 後手：g～i行（敵陣3行）に駒がある場合
-  if (!isPlayerSente && toRowIdx >= 6 && toRowIdx <= 8) {
+  // 後手：移動元がg～i行 OR 移動先がg～i行
+  if (!isPlayerSente && (
+    (fromRowIdx >= 6 && fromRowIdx <= 8) || 
+    (toRowIdx >= 6 && toRowIdx <= 8)
+  )) {
     return true
   }
   
