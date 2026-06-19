@@ -6,16 +6,30 @@ type Props = {
     gote: string[]
   }
   currentTurn: 'b' | 'w'
+  selectedCapturedPiece?: string | null
+  onCapturedPieceClick?: (piece: string) => void
+  playerColor?: 'b' | 'w'  // 'b' = 先手（自分）, 'w' = 後手（相手）
 }
 
 export default function GameSidebar({
   capturedPieces,
   currentTurn,
+  selectedCapturedPiece,
+  onCapturedPieceClick,
+  playerColor = 'b',  // デフォルトは先手（自分）
 }: Props) {
+  // playerColor = 'b' の場合、自分が先手（下側）、相手が後手（上側）
+  const isPlayerSente = playerColor === 'b'
+  // sente の駒は大文字、gote の駒は小文字で保存
+  const playerCaptured = isPlayerSente ? capturedPieces.sente : capturedPieces.gote
+  const opponentCaptured = isPlayerSente ? capturedPieces.gote : capturedPieces.sente
+  const playerTurnSymbol = isPlayerSente ? 'b' : 'w'
+  const opponentTurnSymbol = isPlayerSente ? 'w' : 'b'
+
   return (
     <div className="w-full lg:w-72 border-l border-zinc-800 bg-zinc-950 p-6 flex flex-col justify-between">
 
-      {/* 上側 */}
+      {/* 上側：相手 */}
       <div>
         <p className="text-amber-400 tracking-[0.3em] text-xs mb-2">
           ONLINE MATCH
@@ -25,40 +39,48 @@ export default function GameSidebar({
           対局中
         </h1>
 
-        {/* 後手持ち駒 */}
+        {/* 相手持ち駒 */}
         <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 mb-4">
           <p className="text-zinc-400 mb-3">
-            後手持ち駒
+            相手持ち駒
           </p>
 
           <div className="flex flex-wrap gap-2 text-2xl">
-            {capturedPieces.gote.map((piece, index) => (
-              <div
+            {opponentCaptured.map((piece, index) => (
+              <button
                 key={index}
-                className="w-12 h-12 rounded-xl bg-amber-100 text-black flex items-center justify-center font-bold"
+                onClick={() => onCapturedPieceClick?.(piece)}
+                className={`
+                  w-12 h-12 rounded-xl text-black flex items-center justify-center font-bold
+                  transition cursor-pointer
+                  ${selectedCapturedPiece === piece
+                    ? 'bg-blue-400 ring-2 ring-blue-600'
+                    : 'bg-amber-100 hover:bg-amber-200'
+                  }
+                `}
               >
                 {pieceMap[piece]}
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* 後手時間 */}
+        {/* 相手時間 */}
         <div
           className={`
             bg-zinc-900 rounded-2xl p-5 border
             ${
-              currentTurn === 'w'
+              currentTurn === opponentTurnSymbol
                 ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)] animate-pulse'
                 : 'border-zinc-800'
             }
           `}
         >
-          <p className="text-zinc-400 mb-2">後手</p>
+          <p className="text-zinc-400 mb-2">相手</p>
 
           <div
             className={`text-5xl font-black ${
-              currentTurn === 'w'
+              currentTurn === opponentTurnSymbol
                 ? 'text-yellow-300'
                 : 'text-white'
             }`}
@@ -68,24 +90,24 @@ export default function GameSidebar({
         </div>
       </div>
 
-      {/* 下側 */}
+      {/* 下側：自分 */}
       <div>
-        {/* 先手時間 */}
+        {/* 自分時間 */}
         <div
           className={`
             bg-zinc-900 rounded-2xl p-5 border mb-4
             ${
-              currentTurn === 'b'
+              currentTurn === playerTurnSymbol
                 ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.7)] animate-pulse'
                 : 'border-zinc-800'
             }
           `}
         >
-          <p className="text-zinc-400 mb-2">先手</p>
+          <p className="text-zinc-400 mb-2">自分</p>
 
           <div
             className={`text-5xl font-black ${
-              currentTurn === 'b'
+              currentTurn === playerTurnSymbol
                 ? 'text-yellow-300'
                 : 'text-white'
             }`}
@@ -94,21 +116,32 @@ export default function GameSidebar({
           </div>
         </div>
 
-        {/* 先手持ち駒 */}
+        {/* 自分持ち駒 */}
         <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800 mb-6">
           <p className="text-zinc-400 mb-3">
-            先手持ち駒
+            自分持ち駒
           </p>
 
           <div className="flex flex-wrap gap-2 text-2xl">
-            {capturedPieces.sente.map((piece, index) => (
-              <div
-                key={index}
-                className="w-12 h-12 rounded-xl bg-amber-100 text-black flex items-center justify-center font-bold"
-              >
-                {pieceMap[piece]}
-              </div>
-            ))}
+            {playerCaptured.map((piece, index) => {
+              const normalizedPiece = piece.toUpperCase()
+              return (
+                <button
+                  key={index}
+                  onClick={() => onCapturedPieceClick?.(piece)}
+                  className={`
+                    w-12 h-12 rounded-xl text-black flex items-center justify-center font-bold
+                    transition cursor-pointer
+                    ${selectedCapturedPiece === piece
+                      ? 'bg-blue-400 ring-2 ring-blue-600'
+                      : 'bg-amber-100 hover:bg-amber-200'
+                    }
+                  `}
+                >
+                  {pieceMap[normalizedPiece]}
+                </button>
+              )
+            })}
           </div>
         </div>
 

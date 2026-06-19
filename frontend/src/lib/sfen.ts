@@ -10,6 +10,12 @@ export type ParsedSFEN = {
   moveNumber: number
 }
 
+/**
+ * SFEN文字列から盤面を作成
+ * 
+ * @param boardPart 
+ * @returns 
+ */
 function parseBoard(boardPart: string): Piece[][] {
   const rows = boardPart.split('/')
 
@@ -42,6 +48,12 @@ function parseBoard(boardPart: string): Piece[][] {
   })
 }
 
+/**
+ * SFEN文字列から持ち駒を作成
+ * 
+ * @param capturedPart 
+ * @returns 
+ */
 function parseCaptured(capturedPart: string) {
   const sente: string[] = []
   const gote: string[] = []
@@ -67,7 +79,7 @@ function parseCaptured(capturedPart: string) {
       if (char === char.toUpperCase()) {
         sente.push(char)
       } else {
-        gote.push(char.toUpperCase())
+        gote.push(char)  // 小文字のまま保持
       }
     }
 
@@ -80,6 +92,12 @@ function parseCaptured(capturedPart: string) {
   }
 }
 
+/**
+ * SFEN文字列から持ちゴマと盤面を作成
+ * 
+ * @param sfen 
+ * @returns 
+ */
 export function parseSFEN(sfen: string): ParsedSFEN {
   const [
     boardPart,
