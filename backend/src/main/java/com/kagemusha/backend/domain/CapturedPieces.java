@@ -52,6 +52,6 @@ public class CapturedPieces {
      * 指定プレイヤーの持ち駒一覧を取得する
      */
     public Map<PieceType, Integer> getPieces(PlayerType owner) {
-        return pieces.get(owner);
+        return new EnumMap<>(pieces.get(owner));
     }
 }

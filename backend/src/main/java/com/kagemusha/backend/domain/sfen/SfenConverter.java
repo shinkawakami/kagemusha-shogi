@@ -10,13 +10,32 @@ import com.kagemusha.backend.domain.Position;
 public class SfenConverter {
 
     /**
+     * 持ち駒をSFENに出力するときの順番。
+     *
+     * SFENでは、先手の持ち駒を大文字、後手の持ち駒を小文字で表す。
+     * 王は持ち駒にならないため含めない。
+     */
+    private static final PieceType[] CAPTURED_PIECE_ORDER = {
+            PieceType.HISHA,
+            PieceType.KAKU,
+            PieceType.KIN,
+            PieceType.GIN,
+            PieceType.KEIMA,
+            PieceType.KYO,
+            PieceType.FU
+    };
+
+    private SfenConverter() {
+    }
+
+    /**
      * SFEN文字列から盤面情報だけを取り出し、Board に変換する。
      *
      * @param sfen SFEN文字列
      * @return 変換後の盤面
      */
     public static Board toBoard(String sfen) {
-        String[] parts = sfen.split(" ");
+        String[] parts = splitSfen(sfen);
 
         if (parts.length < 1) {
             throw new IllegalArgumentException("SFENに盤面情報がありません");
@@ -32,7 +51,7 @@ public class SfenConverter {
      * @return 現在の手番
      */
     public static PlayerType extractCurrentTurn(String sfen) {
-        String[] parts = sfen.split(" ");
+        String[] parts = splitSfen(sfen);
 
         if (parts.length < 2) {
             throw new IllegalArgumentException("SFENに手番情報がありません");
@@ -44,14 +63,17 @@ public class SfenConverter {
     /**
      * SFEN文字列から持ち駒情報を取得する。
      *
-     * 現時点では持ち駒の詳細変換は未実装のため、
-     * 空の CapturedPieces を返す。
+     * 例:
+     * -      持ち駒なし
+     * P      先手の歩1枚
+     * 2P     先手の歩2枚
+     * R2Pb   先手の飛車1枚、先手の歩2枚、後手の角1枚
      *
      * @param sfen SFEN文字列
      * @return 持ち駒情報
      */
     public static CapturedPieces extractCapturedPieces(String sfen) {
-        String[] parts = sfen.split(" ");
+        String[] parts = splitSfen(sfen);
 
         if (parts.length < 3) {
             throw new IllegalArgumentException("SFENに持ち駒情報がありません");
@@ -61,12 +83,48 @@ public class SfenConverter {
 
         String capturedPart = parts[2];
 
-        if (capturedPart.equals("-")) {
+        if ("-".equals(capturedPart)) {
             return capturedPieces;
         }
 
-        // 例: S2Pb3p
-        // 持ち駒機能を実装するタイミングで、ここに変換処理を追加する。
+        int count = 0;
+
+        for (int i = 0; i < capturedPart.length(); i++) {
+            char current = capturedPart.charAt(i);
+
+            if (Character.isDigit(current)) {
+                int digit = Character.getNumericValue(current);
+
+                if (digit == 0 && count == 0) {
+                    throw new IllegalArgumentException("SFENの持ち駒枚数が不正です: " + capturedPart);
+                }
+
+                count = count * 10 + digit;
+                continue;
+            }
+
+            PlayerType owner = Character.isUpperCase(current)
+                    ? PlayerType.SENTE
+                    : PlayerType.GOTE;
+
+            PieceType pieceType = PieceType.fromSfenSymbol(String.valueOf(current));
+
+            if (pieceType == PieceType.GYOKU) {
+                throw new IllegalArgumentException("王は持ち駒にできません: " + capturedPart);
+            }
+
+            int amount = count == 0 ? 1 : count;
+
+            for (int j = 0; j < amount; j++) {
+                capturedPieces.add(owner, pieceType);
+            }
+
+            count = 0;
+        }
+
+        if (count != 0) {
+            throw new IllegalArgumentException("SFENの持ち駒情報が不正です: " + capturedPart);
+        }
 
         return capturedPieces;
     }
@@ -78,13 +136,17 @@ public class SfenConverter {
      * @return 手数
      */
     public static int extractMoveNumber(String sfen) {
-        String[] parts = sfen.split(" ");
+        String[] parts = splitSfen(sfen);
 
         if (parts.length < 4) {
             throw new IllegalArgumentException("SFENに手数情報がありません");
         }
 
-        return Integer.parseInt(parts[3]);
+        try {
+            return Integer.parseInt(parts[3]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("SFENの手数が不正です: " + parts[3], e);
+        }
     }
 
     /**
@@ -107,88 +169,6 @@ public class SfenConverter {
         String capturedPart = toSfenCapturedPieces(capturedPieces);
 
         return boardPart + " " + turnPart + " " + capturedPart + " " + moveNumber;
-    }
-
-    /**
-     * 持ち駒情報をSFEN形式に変換する。
-     *
-     * 現時点では持ち駒変換は未実装のため、持ち駒なしを表す "-" を返す。
-     *
-     * @param capturedPieces 持ち駒
-     * @return SFEN形式の持ち駒情報
-     */
-    private static String toSfenCapturedPieces(CapturedPieces capturedPieces) {
-        return "-";
-    }
-
-    /**
-     * SFENの盤面部分を Board に変換する。
-     *
-     * 例:
-     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
-     *
-     * @param boardPart SFENの盤面部分
-     * @return 変換後の盤面
-     */
-    private static Board toBoardFromBoardPart(String boardPart) {
-        Board board = new Board();
-
-        String[] rows = boardPart.split("/");
-
-        if (rows.length != 9) {
-            throw new IllegalArgumentException("SFENの盤面行数が不正です: " + boardPart);
-        }
-
-        for (int rowIndex = 0; rowIndex < 9; rowIndex++) {
-            String rowText = rows[rowIndex];
-            int colIndex = 0;
-
-            for (int i = 0; i < rowText.length(); i++) {
-                char current = rowText.charAt(i);
-
-                if (Character.isDigit(current)) {
-                    int emptyCount = Character.getNumericValue(current);
-                    colIndex += emptyCount;
-                    continue;
-                }
-
-                boolean promoted = false;
-
-                if (current == '+') {
-                    promoted = true;
-                    i++;
-
-                    if (i >= rowText.length()) {
-                        throw new IllegalArgumentException("成り駒の指定が不正です: " + rowText);
-                    }
-
-                    current = rowText.charAt(i);
-                }
-
-                if (colIndex >= 9) {
-                    throw new IllegalArgumentException("SFENの列数が不正です: " + rowText);
-                }
-
-                String symbol = String.valueOf(current);
-                PieceType type = PieceType.fromSfenSymbol(symbol);
-                PlayerType owner = Character.isUpperCase(current)
-                        ? PlayerType.SENTE
-                        : PlayerType.GOTE;
-
-                Piece piece = new Piece(type, owner, promoted);
-                Position position = Position.fromArrayIndex(rowIndex, colIndex);
-
-                board.setPiece(position, piece);
-
-                colIndex++;
-            }
-
-            if (colIndex != 9) {
-                throw new IllegalArgumentException("SFENの列数が不正です: " + rowText);
-            }
-        }
-
-        return board;
     }
 
     /**
@@ -223,6 +203,10 @@ public class SfenConverter {
                     emptyCount = 0;
                 }
 
+                if (piece.isPromoted() && !canPromote(piece.getType())) {
+                    throw new IllegalArgumentException("成れない駒が成り状態になっています: " + piece.getType());
+                }
+
                 result.append(piece.toSfenSymbol());
             }
 
@@ -232,5 +216,177 @@ public class SfenConverter {
         }
 
         return result.toString();
+    }
+
+    /**
+     * SFEN文字列を空白で分割する。
+     *
+     * @param sfen SFEN文字列
+     * @return 分割後の配列
+     */
+    private static String[] splitSfen(String sfen) {
+        if (sfen == null || sfen.isBlank()) {
+            throw new IllegalArgumentException("SFENが空です");
+        }
+
+        return sfen.trim().split("\\s+");
+    }
+
+    /**
+     * 持ち駒情報をSFEN形式に変換する。
+     *
+     * @param capturedPieces 持ち駒
+     * @return SFEN形式の持ち駒情報
+     */
+    private static String toSfenCapturedPieces(CapturedPieces capturedPieces) {
+        if (capturedPieces == null) {
+            return "-";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        for (PieceType pieceType : CAPTURED_PIECE_ORDER) {
+            appendCapturedPiece(result, capturedPieces, PlayerType.SENTE, pieceType);
+        }
+
+        for (PieceType pieceType : CAPTURED_PIECE_ORDER) {
+            appendCapturedPiece(result, capturedPieces, PlayerType.GOTE, pieceType);
+        }
+
+        if (result.length() == 0) {
+            return "-";
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * 指定した持ち駒をSFEN文字列に追加する。
+     *
+     * @param result 追加先
+     * @param capturedPieces 持ち駒
+     * @param owner 所有者
+     * @param pieceType 駒種
+     */
+    private static void appendCapturedPiece(
+            StringBuilder result,
+            CapturedPieces capturedPieces,
+            PlayerType owner,
+            PieceType pieceType
+    ) {
+        int count = capturedPieces.count(owner, pieceType);
+
+        if (count <= 0) {
+            return;
+        }
+
+        if (count > 1) {
+            result.append(count);
+        }
+
+        String symbol = pieceType.getSfenSymbol();
+
+        if (owner == PlayerType.GOTE) {
+            symbol = symbol.toLowerCase();
+        }
+
+        result.append(symbol);
+    }
+
+    /**
+     * SFENの盤面部分を Board に変換する。
+     *
+     * 例:
+     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
+     *
+     * @param boardPart SFENの盤面部分
+     * @return 変換後の盤面
+     */
+    private static Board toBoardFromBoardPart(String boardPart) {
+        if (boardPart == null || boardPart.isBlank()) {
+            throw new IllegalArgumentException("SFENの盤面情報が空です");
+        }
+
+        Board board = new Board();
+
+        String[] rows = boardPart.split("/");
+
+        if (rows.length != 9) {
+            throw new IllegalArgumentException("SFENの盤面行数が不正です: " + boardPart);
+        }
+
+        for (int rowIndex = 0; rowIndex < 9; rowIndex++) {
+            String rowText = rows[rowIndex];
+            int colIndex = 0;
+
+            for (int i = 0; i < rowText.length(); i++) {
+                char current = rowText.charAt(i);
+
+                if (Character.isDigit(current)) {
+                    int emptyCount = Character.getNumericValue(current);
+
+                    if (emptyCount <= 0 || colIndex + emptyCount > 9) {
+                        throw new IllegalArgumentException("SFENの空マス数が不正です: " + rowText);
+                    }
+
+                    colIndex += emptyCount;
+                    continue;
+                }
+
+                boolean promoted = false;
+
+                if (current == '+') {
+                    promoted = true;
+                    i++;
+
+                    if (i >= rowText.length()) {
+                        throw new IllegalArgumentException("成り駒の指定が不正です: " + rowText);
+                    }
+
+                    current = rowText.charAt(i);
+                }
+
+                if (colIndex >= 9) {
+                    throw new IllegalArgumentException("SFENの列数が不正です: " + rowText);
+                }
+
+                String symbol = String.valueOf(current);
+                PieceType type = PieceType.fromSfenSymbol(symbol);
+
+                if (promoted && !canPromote(type)) {
+                    throw new IllegalArgumentException("成れない駒が成り指定されています: " + rowText);
+                }
+
+                PlayerType owner = Character.isUpperCase(current)
+                        ? PlayerType.SENTE
+                        : PlayerType.GOTE;
+
+                Piece piece = new Piece(type, owner, promoted);
+                Position position = Position.fromArrayIndex(rowIndex, colIndex);
+
+                board.setPiece(position, piece);
+
+                colIndex++;
+            }
+
+            if (colIndex != 9) {
+                throw new IllegalArgumentException("SFENの列数が不正です: " + rowText);
+            }
+        }
+
+        return board;
+    }
+
+    /**
+     * 成れる駒かどうかを判定する。
+     *
+     * @param type 駒種
+     * @return 成れる場合は true
+     */
+    private static boolean canPromote(PieceType type) {
+        return switch (type) {
+            case FU, KYO, KEIMA, GIN, HISHA, KAKU -> true;
+            case KIN, GYOKU -> false;
+        };
     }
 }

@@ -4,7 +4,9 @@ import com.kagemusha.backend.domain.sfen.SfenConstants;
 import com.kagemusha.backend.domain.sfen.SfenConverter;
 import com.kagemusha.backend.domain.sfen.SfenMove;
 import com.kagemusha.backend.domain.sfen.SfenMoveParser;
+import com.kagemusha.backend.domain.validator.DropMoveValidator;
 import com.kagemusha.backend.domain.validator.MoveValidator;
+import com.kagemusha.backend.domain.validator.PromotionValidator;
 
 public class Game {
 
@@ -58,9 +60,38 @@ public class Game {
 
         SfenMove move = SfenMoveParser.parse(moveText);
 
+        if (move.isDrop()) {
+            DropMoveValidator.validate(this, move);
+
+            capturedPieces.remove(currentTurn, move.getDropPieceType());
+
+            Piece droppedPiece = new Piece(
+                    move.getDropPieceType(),
+                    currentTurn,
+                    false
+            );
+
+            board.setPiece(move.getTo(), droppedPiece);
+
+            switchTurn();
+            moveNumber++;
+            return;
+        }
+
         MoveValidator.validate(this, move);
 
         Piece movingPiece = board.getPiece(move.getFrom());
+
+        PromotionValidator.validate(movingPiece, move);
+
+        Piece capturedPiece = board.getPiece(move.getTo());
+
+        if (capturedPiece != null) {
+            capturedPieces.add(
+                    movingPiece.getOwner(),
+                    capturedPiece.getType()
+            );
+        }
 
         Piece pieceAfterMove = movingPiece;
 
@@ -68,7 +99,8 @@ public class Game {
             pieceAfterMove = new Piece(
                     movingPiece.getType(),
                     movingPiece.getOwner(),
-                    true);
+                    true
+            );
         }
 
         board.setPiece(move.getTo(), pieceAfterMove);

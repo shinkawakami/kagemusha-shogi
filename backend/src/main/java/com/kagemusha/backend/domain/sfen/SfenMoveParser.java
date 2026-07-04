@@ -1,5 +1,7 @@
 package com.kagemusha.backend.domain.sfen;
 
+import com.kagemusha.backend.domain.PieceType;
+import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 
 public class SfenMoveParser {
@@ -12,6 +14,10 @@ public class SfenMoveParser {
             throw new IllegalArgumentException("指し手が空です");
         }
 
+        if (isDropMove(move)) {
+            return parseDropMove(move);
+        }
+
         if (move.length() != 4 && move.length() != 5) {
             throw new IllegalArgumentException("指し手の形式が不正です: " + move);
         }
@@ -20,7 +26,56 @@ public class SfenMoveParser {
         Position to = parsePosition(move.substring(2, 4));
         boolean promote = move.length() == 5 && move.charAt(4) == '+';
 
-        return new SfenMove(from, to, promote);
+        return SfenMove.normalMove(from, to, promote);
+    }
+
+    /**
+     * 持ち駒打ちかどうかを判定する。
+     *
+     * 例:
+     * P2d
+     * p2d
+     * R5e
+     */
+    private static boolean isDropMove(String move) {
+        if (move.length() != 3) {
+            return false;
+        }
+
+        char pieceChar = move.charAt(0);
+        char fileChar = move.charAt(1);
+        char rankChar = move.charAt(2);
+
+        boolean piecePart = Character.isLetter(pieceChar);
+        boolean filePart = fileChar >= '1' && fileChar <= '9';
+        boolean rankPart = rankChar >= 'a' && rankChar <= 'i';
+
+        return piecePart && filePart && rankPart;
+    }
+
+    /**
+     * 持ち駒打ちを解析する。
+     *
+     * 例:
+     * P2d
+     * p2d
+     */
+    private static SfenMove parseDropMove(String move) {
+        char pieceChar = move.charAt(0);
+
+        PieceType pieceType = PieceType.fromSfenSymbol(String.valueOf(pieceChar));
+
+        if (pieceType == PieceType.GYOKU) {
+            throw new IllegalArgumentException("王は持ち駒として打てません: " + move);
+        }
+
+        PlayerType owner = Character.isUpperCase(pieceChar)
+                ? PlayerType.SENTE
+                : PlayerType.GOTE;
+
+        Position to = parsePosition(move.substring(1, 3));
+
+        return SfenMove.dropMove(pieceType, owner, to);
     }
 
     private static Position parsePosition(String text) {
@@ -42,9 +97,8 @@ public class SfenMoveParser {
         int file = Character.getNumericValue(fileChar);
         int row = rankChar - 'a' + 1;
 
-        // SFEN/USIでは右上が1a、左上が9a。
-        // Boardの配列は左から右へ col=1〜9 として扱うため、
-        // 1筋は配列上の右端、9筋は左端になるように反転する。
+        // SFEN/USIの座標では右上が1a、左上が9a。
+        // Boardの配列は左から右へ col=1〜9 なので反転する。
         int col = 10 - file;
 
         return new Position(row, col);
