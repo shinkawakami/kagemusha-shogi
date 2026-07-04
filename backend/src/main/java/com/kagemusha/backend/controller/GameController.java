@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kagemusha.backend.controller.request.MoveRequest;
+import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.controller.response.GameData;
 import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
+import com.kagemusha.backend.domain.PlayerType;
+import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.service.GameService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,6 +69,32 @@ public class GameController {
                 game.getWinner() == null ? null : game.getWinner().name(),
                 game.getSfen(),
                 null);
+
+        return ResponseEntity.ok(new GameResponse(true, data));
+    }
+
+    @PostMapping("/{id}/shadow")
+    public ResponseEntity<GameResponse> selectShadow(
+            @PathVariable Long id,
+            @RequestBody SelectShadowRequest request
+    ) {
+        Game game = gameService.selectShadow(id, request);
+
+        GameData data = new GameData(
+                game.getId(),
+                game.getStatus().name(),
+                game.getWinner() == null ? null : game.getWinner().name(),
+                game.getSfen(),
+                null);
+
+        Position senteShadow = game.getShadowPosition(PlayerType.SENTE);
+        Position goteShadow = game.getShadowPosition(PlayerType.GOTE);
+
+        log.info(
+                "shadow. senteShadow={}, goteShadow={}",
+                senteShadow != null ? senteShadow.getCol() : "未選択",
+                goteShadow != null ? goteShadow.getCol() : "未選択"
+        );
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }

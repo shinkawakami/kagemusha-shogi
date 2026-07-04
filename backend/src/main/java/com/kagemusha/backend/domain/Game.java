@@ -17,6 +17,8 @@ public class Game {
     private int moveNumber;
     private GameStatus status;
     private PlayerType winner;
+    private Position senteShadowPosition;
+    private Position goteShadowPosition;
 
     public Game(
             Long id,
@@ -170,5 +172,39 @@ public class Game {
     public void finish(PlayerType winner) {
         this.status = GameStatus.FINISHED;
         this.winner = winner;
+    }
+
+    public void selectShadow(PlayerType playerType, Position position) {
+        Piece piece = board.getPiece(position);
+
+        if (piece == null) {
+            throw new IllegalArgumentException("駒がないマスは影武者に選択できません");
+        }
+
+        if (piece.getOwner() != playerType) {
+            throw new IllegalArgumentException("自分の駒だけ影武者に選択できます");
+        }
+
+        if (playerType == PlayerType.SENTE) {
+            if (senteShadowPosition != null) {
+                throw new IllegalArgumentException("先手の影武者はすでに選択済みです");
+            }
+            senteShadowPosition = position;
+        } else {
+            if (goteShadowPosition != null) {
+                throw new IllegalArgumentException("後手の影武者はすでに選択済みです");
+            }
+            goteShadowPosition = position;
+        }
+
+        if (senteShadowPosition != null && goteShadowPosition != null) {
+            status = GameStatus.PLAYING;
+        }
+    }
+
+    public Position getShadowPosition(PlayerType playerType) {
+        return playerType == PlayerType.SENTE
+                ? senteShadowPosition
+                : goteShadowPosition;
     }
 }
