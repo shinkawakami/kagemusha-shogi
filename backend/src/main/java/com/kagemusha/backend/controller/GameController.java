@@ -40,8 +40,9 @@ public class GameController {
                 game.getId(),
                 game.getStatus().name(),
                 null,
-                game.getBoardSfen(),
-                null);
+                game.getSfen(),
+                null
+        );
 
         // 成功フラグとゲームデータをレスポンスとして返す
         // ResponseEntity.ok() により HTTP 200 OK で返却される
@@ -59,7 +60,7 @@ public class GameController {
                 game.getId(),
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
-                game.getBoardSfen(),
+                game.getSfen(),
                 null);
 
         return ResponseEntity.ok(new GameResponse(true, data));
@@ -78,7 +79,7 @@ public class GameController {
                 game.getId(),
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
-                game.getBoardSfen(),
+                game.getSfen(),
                 request.getMove());
 
         return ResponseEntity.ok(new GameResponse(true, data));

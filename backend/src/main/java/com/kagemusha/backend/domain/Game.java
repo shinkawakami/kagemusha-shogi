@@ -75,6 +75,7 @@ public class Game {
         board.removePiece(move.getFrom());
 
         switchTurn();
+        moveNumber++;
     }
 
     public Long getId() {
@@ -89,6 +90,14 @@ public class Game {
         return currentTurn;
     }
 
+    public CapturedPieces getCapturedPieces() {
+        return capturedPieces;
+    }
+
+    public int getMoveNumber() {
+        return moveNumber;
+    }
+
     public GameStatus getStatus() {
         return status;
     }
@@ -97,8 +106,29 @@ public class Game {
         return winner;
     }
 
+    /**
+     * 盤面部分だけのSFENを返す。
+     *
+     * 例:
+     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
+     */
     public String getBoardSfen() {
         return SfenConverter.fromBoardOnly(board);
+    }
+
+    /**
+     * ゲーム状態全体のSFENを返す。
+     *
+     * 例:
+     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1
+     */
+    public String getSfen() {
+        return SfenConverter.from(
+                board,
+                currentTurn,
+                capturedPieces,
+                moveNumber
+        );
     }
 
     public void switchTurn() {
