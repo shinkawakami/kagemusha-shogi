@@ -1,0 +1,1 @@
+export type Piece = string | null;
