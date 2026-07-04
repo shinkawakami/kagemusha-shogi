@@ -1,4 +1,6 @@
-package com.kagemusha.backend.domain;
+package com.kagemusha.backend.domain.sfen;
+
+import com.kagemusha.backend.domain.Position;
 
 public class SfenMoveParser {
 

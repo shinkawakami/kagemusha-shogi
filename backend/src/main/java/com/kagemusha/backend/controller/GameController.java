@@ -30,16 +30,21 @@ public class GameController {
      */
     @PostMapping
     public ResponseEntity<GameResponse> createGame() {
+
+        // 新しいゲームの作成する
         Game game = gameService.createGame();
 
+        // APIレスポンスとして返すデータを作成する
+        // Gameオブジェクトをそのまま返さず、必要な項目だけDTOに詰め替える
         GameData data = new GameData(
                 game.getId(),
                 game.getStatus().name(),
-                game.getWinner() == null ? null : game.getWinner().name(),
+                null,
                 game.getBoardSfen(),
-                null
-        );
+                null);
 
+        // 成功フラグとゲームデータをレスポンスとして返す
+        // ResponseEntity.ok() により HTTP 200 OK で返却される
         return ResponseEntity.ok(new GameResponse(true, data));
     }
 
@@ -55,17 +60,18 @@ public class GameController {
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
                 game.getBoardSfen(),
-                null
-        );
+                null);
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }
 
+    /**
+     * 駒移動
+     */
     @PostMapping("/{id}/moves")
     public ResponseEntity<GameResponse> move(
             @PathVariable Long id,
-            @RequestBody MoveRequest request
-    ) {
+            @RequestBody MoveRequest request) {
         Game game = gameService.move(id, request.getMove());
 
         GameData data = new GameData(
@@ -73,8 +79,7 @@ public class GameController {
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
                 game.getBoardSfen(),
-                request.getMove()
-        );
+                request.getMove());
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }
