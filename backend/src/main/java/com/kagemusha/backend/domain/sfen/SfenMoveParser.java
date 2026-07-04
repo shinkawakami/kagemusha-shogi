@@ -42,9 +42,10 @@ public class SfenMoveParser {
         int file = Character.getNumericValue(fileChar);
         int row = rankChar - 'a' + 1;
 
-        // SFENの筋は「右から1〜9」
-        // そのため Position の col も「右から1〜9」として扱う
-        int col = file;
+        // SFEN/USIでは右上が1a、左上が9a。
+        // Boardの配列は左から右へ col=1〜9 として扱うため、
+        // 1筋は配列上の右端、9筋は左端になるように反転する。
+        int col = 10 - file;
 
         return new Position(row, col);
     }

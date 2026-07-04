@@ -1,5 +1,7 @@
 package com.kagemusha.backend.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RestController
 @RequestMapping("/api/games")
 public class GameController {
+
+    private static final Logger log = LoggerFactory.getLogger(GameController.class);
 
     private final GameService gameService;
 
@@ -73,6 +77,9 @@ public class GameController {
     public ResponseEntity<GameResponse> move(
             @PathVariable Long id,
             @RequestBody MoveRequest request) {
+
+        log.info("move API called. gameId={}, move={}", id, request.getMove());
+
         Game game = gameService.move(id, request.getMove());
 
         GameData data = new GameData(
