@@ -1,7 +1,10 @@
 package com.kagemusha.backend.service;
 
+import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.PlayerType;
+import com.kagemusha.backend.domain.Position;
+
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +59,16 @@ public class GameService {
         if (game == null) {
             throw new IllegalArgumentException("存在しないゲームIDです: " + id);
         }
+        return game;
+    }
+
+    public Game selectShadow(Long gameId, SelectShadowRequest request) {
+        Game game = getGame(gameId);
+
+        Position position = new Position(request.getRow(), request.getColumn());
+
+        game.selectShadow(request.getPlayerType(), position);
+
         return game;
     }
 
