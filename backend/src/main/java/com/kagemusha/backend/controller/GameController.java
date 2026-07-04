@@ -1,5 +1,7 @@
 package com.kagemusha.backend.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/api/games")
 public class GameController {
 
+    private static final Logger log = LoggerFactory.getLogger(GameController.class);
+
     private final GameService gameService;
 
     public GameController(GameService gameService) {
@@ -30,16 +34,22 @@ public class GameController {
      */
     @PostMapping
     public ResponseEntity<GameResponse> createGame() {
+
+        // 新しいゲームの作成する
         Game game = gameService.createGame();
 
+        // APIレスポンスとして返すデータを作成する
+        // Gameオブジェクトをそのまま返さず、必要な項目だけDTOに詰め替える
         GameData data = new GameData(
                 game.getId(),
                 game.getStatus().name(),
-                game.getWinner() == null ? null : game.getWinner().name(),
-                game.getBoardSfen(),
+                null,
+                game.getSfen(),
                 null
         );
 
+        // 成功フラグとゲームデータをレスポンスとして返す
+        // ResponseEntity.ok() により HTTP 200 OK で返却される
         return ResponseEntity.ok(new GameResponse(true, data));
     }
 
@@ -54,27 +64,30 @@ public class GameController {
                 game.getId(),
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
-                game.getBoardSfen(),
-                null
-        );
+                game.getSfen(),
+                null);
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }
 
+    /**
+     * 駒移動
+     */
     @PostMapping("/{id}/moves")
     public ResponseEntity<GameResponse> move(
             @PathVariable Long id,
-            @RequestBody MoveRequest request
-    ) {
+            @RequestBody MoveRequest request) {
+
+        log.info("move API called. gameId={}, move={}", id, request.getMove());
+
         Game game = gameService.move(id, request.getMove());
 
         GameData data = new GameData(
                 game.getId(),
                 game.getStatus().name(),
                 game.getWinner() == null ? null : game.getWinner().name(),
-                game.getBoardSfen(),
-                request.getMove()
-        );
+                game.getSfen(),
+                request.getMove());
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }

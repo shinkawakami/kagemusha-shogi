@@ -1,28 +1,56 @@
 package com.kagemusha.backend.domain;
 
+import com.kagemusha.backend.domain.sfen.SfenConstants;
+import com.kagemusha.backend.domain.sfen.SfenConverter;
+import com.kagemusha.backend.domain.sfen.SfenMove;
+import com.kagemusha.backend.domain.sfen.SfenMoveParser;
+import com.kagemusha.backend.domain.validator.MoveValidator;
+
 public class Game {
 
     private final Long id;
     private Board board;
     private PlayerType currentTurn;
+    private CapturedPieces capturedPieces;
+    private int moveNumber;
     private GameStatus status;
     private PlayerType winner;
 
-    public Game(Long id, Board board, PlayerType currentTurn) {
+    public Game(
+            Long id,
+            Board board,
+            PlayerType currentTurn,
+            CapturedPieces capturedPieces,
+            int moveNumber) {
         this.id = id;
         this.board = board;
         this.currentTurn = currentTurn;
+        this.capturedPieces = capturedPieces;
+        this.moveNumber = moveNumber;
         this.status = GameStatus.PLAYING;
         this.winner = null;
     }
 
+    /**
+     * 初期状態のゲームを作成する
+     */
     public static Game createInitialGame(Long id) {
         Board board = SfenConverter.toBoard(SfenConstants.INITIAL_SFEN);
         PlayerType currentTurn = SfenConverter.extractCurrentTurn(SfenConstants.INITIAL_SFEN);
+        CapturedPieces capturedPieces = SfenConverter.extractCapturedPieces(SfenConstants.INITIAL_SFEN);
+        int moveNumber = SfenConverter.extractMoveNumber(SfenConstants.INITIAL_SFEN);
 
-        return new Game(id, board, currentTurn);
+        return new Game(
+                id,
+                board,
+                currentTurn,
+                capturedPieces,
+                moveNumber);
     }
 
+    /**
+     * 駒を移動する
+     */
     public void move(String moveText) {
         if (status == GameStatus.FINISHED) {
             throw new IllegalStateException("すでに終了したゲームです");
@@ -40,14 +68,14 @@ public class Game {
             pieceAfterMove = new Piece(
                     movingPiece.getType(),
                     movingPiece.getOwner(),
-                    true
-            );
+                    true);
         }
 
         board.setPiece(move.getTo(), pieceAfterMove);
         board.removePiece(move.getFrom());
 
         switchTurn();
+        moveNumber++;
     }
 
     public Long getId() {
@@ -62,6 +90,14 @@ public class Game {
         return currentTurn;
     }
 
+    public CapturedPieces getCapturedPieces() {
+        return capturedPieces;
+    }
+
+    public int getMoveNumber() {
+        return moveNumber;
+    }
+
     public GameStatus getStatus() {
         return status;
     }
@@ -70,8 +106,29 @@ public class Game {
         return winner;
     }
 
+    /**
+     * 盤面部分だけのSFENを返す。
+     *
+     * 例:
+     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
+     */
     public String getBoardSfen() {
         return SfenConverter.fromBoardOnly(board);
+    }
+
+    /**
+     * ゲーム状態全体のSFENを返す。
+     *
+     * 例:
+     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1
+     */
+    public String getSfen() {
+        return SfenConverter.from(
+                board,
+                currentTurn,
+                capturedPieces,
+                moveNumber
+        );
     }
 
     public void switchTurn() {

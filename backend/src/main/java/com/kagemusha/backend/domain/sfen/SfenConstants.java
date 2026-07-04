@@ -1,4 +1,4 @@
-package com.kagemusha.backend.domain;
+package com.kagemusha.backend.domain.sfen;
 
 public class SfenConstants {
 
