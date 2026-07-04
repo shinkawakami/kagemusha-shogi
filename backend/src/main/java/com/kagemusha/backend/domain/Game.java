@@ -88,7 +88,14 @@ public class Game {
 
         Piece capturedPiece = board.getPiece(move.getTo());
 
+        boolean capturedShadow = false;
+
         if (capturedPiece != null) {
+            capturedShadow = isShadowPosition(
+                    capturedPiece.getOwner(),
+                    move.getTo()
+            );
+
             capturedPieces.add(
                     movingPiece.getOwner(),
                     capturedPiece.getType()
@@ -107,6 +114,18 @@ public class Game {
 
         board.setPiece(move.getTo(), pieceAfterMove);
         board.removePiece(move.getFrom());
+
+        updateShadowPositionIfNeeded(
+                movingPiece.getOwner(),
+                move.getFrom(),
+                move.getTo()
+        );
+
+        if (capturedShadow) {
+            finish(movingPiece.getOwner());
+            moveNumber++;
+            return;
+        }
 
         switchTurn();
         moveNumber++;
@@ -206,5 +225,33 @@ public class Game {
         return playerType == PlayerType.SENTE
                 ? senteShadowPosition
                 : goteShadowPosition;
+    }
+
+    private boolean isShadowPosition(PlayerType playerType, Position position) {
+        Position shadowPosition = getShadowPosition(playerType);
+
+        return shadowPosition != null && shadowPosition.equals(position);
+    }
+
+    private void updateShadowPositionIfNeeded(PlayerType playerType, Position from, Position to) {
+        if (!isShadowPosition(playerType, from)) {
+            return;
+        }
+
+        if (playerType == PlayerType.SENTE) {
+            senteShadowPosition = to;
+        } else {
+            goteShadowPosition = to;
+        }
+    }
+
+    public void resign(PlayerType playerType) {
+        if (status == GameStatus.FINISHED) {
+            throw new IllegalStateException("すでに終了したゲームです");
+        }
+
+        PlayerType winner = playerType.opposite();
+
+        finish(winner);
     }
 }
