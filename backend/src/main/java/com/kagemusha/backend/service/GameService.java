@@ -1,9 +1,8 @@
 package com.kagemusha.backend.service;
 
-import com.kagemusha.backend.controller.request.ResignRequest;
+import com.kagemusha.backend.controller.request.LoseRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.domain.Game;
-import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 
@@ -84,16 +83,13 @@ public class GameService {
     }
 
     /**
-     * 勝敗を確定する
+     * 指定されたゲームに対して敗北処理を行う
      */
-    public void finishGame(Long gameId, PlayerType winner) {
+    public Game lose(Long gameId, LoseRequest request) {
         Game game = getGame(gameId);
-        game.finish(winner);
-    }
-
-    public Game resign(Long gameId, ResignRequest request) {
-        Game game = getGame(gameId);
-        game.resign(request.getPlayerType());
+        if ("RESIGN".equals(request.getFinishReason())) {
+            game.resign(request.getPlayerType());
+        }
         return game;
     }
 }

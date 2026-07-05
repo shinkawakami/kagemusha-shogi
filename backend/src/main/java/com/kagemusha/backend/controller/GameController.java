@@ -7,11 +7,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.kagemusha.backend.controller.mapper.GameResponseMapper;
+import com.kagemusha.backend.controller.request.LoseRequest;
 import com.kagemusha.backend.controller.request.MoveRequest;
-import com.kagemusha.backend.controller.request.ResignRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
+import com.kagemusha.backend.controller.response.ApiResponse;
 import com.kagemusha.backend.controller.response.GameData;
-import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.service.GameService;
 
@@ -22,76 +23,77 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class GameController {
 
     private final GameService gameService;
+    private final GameResponseMapper gameResponseMapper;
 
-    public GameController(GameService gameService) {
+    public GameController(
+            GameService gameService,
+            GameResponseMapper gameResponseMapper
+    ) {
         this.gameService = gameService;
+        this.gameResponseMapper = gameResponseMapper;
     }
 
     /**
      * 新しいゲーム作成
      */
     @PostMapping
-    public ResponseEntity<GameResponse> createGame() {
+    public ResponseEntity<ApiResponse<GameData>>  createGame() {
         Game game = gameService.createGame();
+        GameData data = gameResponseMapper.toGameData(game);
         // 成功フラグとゲームデータをレスポンス（ResponseEntity.ok() により HTTP 200 OK で返却）
-        return ResponseEntity.ok(toResponse(game));
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     /**
      * ゲーム取得
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<GameResponse> getGame(@PathVariable Long id) {
-        Game game = gameService.getGame(id);
-        return ResponseEntity.ok(toResponse(game));
+    @GetMapping("/{gameId}")
+    public ResponseEntity<ApiResponse<GameData>> getGame(@PathVariable Long gameId) {
+        Game game = gameService.getGame(gameId);
+        GameData data = gameResponseMapper.toGameData(game);
+
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     /**
      * 影武者選択
      */
-    @PostMapping("/{id}/shadow")
-    public ResponseEntity<GameResponse> selectShadow(
-            @PathVariable Long id,
+    @PostMapping("/{gameId}/shadow")
+    public ResponseEntity<ApiResponse<GameData>> selectShadow(
+            @PathVariable Long gameId,
             @RequestBody SelectShadowRequest request
     ) {
-        Game game = gameService.selectShadow(id, request);
-        return ResponseEntity.ok(toResponse(game));
+        Game game = gameService.selectShadow(gameId, request);
+        GameData data = gameResponseMapper.toGameData(game);
+
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     /**
      * 駒移動
      */
-    @PostMapping("/{id}/moves")
-    public ResponseEntity<GameResponse> move(
-            @PathVariable Long id,
-            @RequestBody MoveRequest request) {
-        Game game = gameService.move(id, request.getMove());
-        return ResponseEntity.ok(toResponse(game));
-    }
-
-    /**
-     * 投了
-     */
-    @PostMapping("/{gameId}/resign")
-    public ResponseEntity<GameResponse> resign(
+    @PostMapping("/{gameId}/moves")
+    public ResponseEntity<ApiResponse<GameData>> move(
             @PathVariable Long gameId,
-            @RequestBody ResignRequest request
+            @RequestBody MoveRequest request
     ) {
-        Game game = gameService.resign(gameId, request);
-        return ResponseEntity.ok(toResponse(game));
+        Game game = gameService.move(gameId, request.getMove());
+        GameData data = gameResponseMapper.toGameData(game);
+
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     /**
-     * GameオブジェクトをGameResponseに変換するヘルパーメソッド
+     * 敗北
      */
-    private GameResponse toResponse(Game game) {
-        GameData data = new GameData(
-                game.getId(),
-                game.getStatus().name(),
-                game.getWinner() == null ? null : game.getWinner().name(),
-                game.getSfen()
-        );
+    @PostMapping("/{gameId}/lose")
+    public ResponseEntity<ApiResponse<GameData>> lose(
+            @PathVariable Long gameId,
+            @RequestBody LoseRequest request
+    ) {
+        Game game = gameService.lose(gameId, request);
+        GameData data = gameResponseMapper.toGameData(game, request.getFinishReason());
 
-        return new GameResponse(true, data);
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
