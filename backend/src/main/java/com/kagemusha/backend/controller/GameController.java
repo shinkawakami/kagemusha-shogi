@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kagemusha.backend.controller.request.MoveRequest;
+import com.kagemusha.backend.controller.request.ResignRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.controller.response.GameData;
 import com.kagemusha.backend.controller.response.GameResponse;
@@ -117,6 +118,23 @@ public class GameController {
                 game.getWinner() == null ? null : game.getWinner().name(),
                 game.getSfen(),
                 request.getMove());
+
+        return ResponseEntity.ok(new GameResponse(true, data));
+    }
+
+    @PostMapping("/{gameId}/resign")
+    public ResponseEntity<GameResponse> resign(
+            @PathVariable Long gameId,
+            @RequestBody ResignRequest request
+    ) {
+        Game game = gameService.resign(gameId, request);
+
+        GameData data = new GameData(
+                game.getId(),
+                game.getStatus().name(),
+                game.getWinner() == null ? null : game.getWinner().name(),
+                game.getSfen(),
+                null);
 
         return ResponseEntity.ok(new GameResponse(true, data));
     }

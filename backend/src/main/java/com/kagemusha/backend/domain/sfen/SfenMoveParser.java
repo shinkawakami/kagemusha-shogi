@@ -79,28 +79,6 @@ public class SfenMoveParser {
     }
 
     private static Position parsePosition(String text) {
-        if (text.length() != 2) {
-            throw new IllegalArgumentException("座標の形式が不正です: " + text);
-        }
-
-        char fileChar = text.charAt(0);
-        char rankChar = text.charAt(1);
-
-        if (fileChar < '1' || fileChar > '9') {
-            throw new IllegalArgumentException("筋の指定が不正です: " + text);
-        }
-
-        if (rankChar < 'a' || rankChar > 'i') {
-            throw new IllegalArgumentException("段の指定が不正です: " + text);
-        }
-
-        int file = Character.getNumericValue(fileChar);
-        int row = rankChar - 'a' + 1;
-
-        // SFEN/USIの座標では右上が1a、左上が9a。
-        // Boardの配列は左から右へ col=1〜9 なので反転する。
-        int col = 10 - file;
-
-        return new Position(row, col);
+        return SfenPositionConverter.toPosition(text);
     }
 }

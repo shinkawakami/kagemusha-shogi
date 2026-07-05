@@ -2,16 +2,11 @@ package com.kagemusha.backend.controller.request;
 
 import com.kagemusha.backend.domain.PlayerType;
 
-public class SelectShadowRequest {
+public class ResignRequest {
 
     private PlayerType playerType;
-    private String position;
 
     public PlayerType getPlayerType() {
         return playerType;
-    }
-
-    public String getPosition() {
-        return position;
     }
 }
