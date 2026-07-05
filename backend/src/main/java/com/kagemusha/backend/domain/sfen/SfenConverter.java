@@ -13,9 +13,9 @@ public class SfenConverter {
      * 持ち駒をSFENに出力するときの順番。
      *
      * SFENでは、先手の持ち駒を大文字、後手の持ち駒を小文字で表す。
-     * 王は持ち駒にならないため含めない。
      */
     private static final PieceType[] CAPTURED_PIECE_ORDER = {
+            PieceType.GYOKU,
             PieceType.HISHA,
             PieceType.KAKU,
             PieceType.KIN,
@@ -322,6 +322,7 @@ public class SfenConverter {
             for (int i = 0; i < rowText.length(); i++) {
                 char current = rowText.charAt(i);
 
+                // 数字の場合は空マスの数を表すため、colIndexを進める
                 if (Character.isDigit(current)) {
                     int emptyCount = Character.getNumericValue(current);
 
@@ -335,6 +336,7 @@ public class SfenConverter {
 
                 boolean promoted = false;
 
+                // 成り駒の指定がある場合は、次の文字を取得する
                 if (current == '+') {
                     promoted = true;
                     i++;
