@@ -1,9 +1,11 @@
 package com.kagemusha.backend.service;
 
+import com.kagemusha.backend.controller.request.ResignRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
+import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 
 import org.springframework.stereotype.Service;
 
@@ -65,7 +67,7 @@ public class GameService {
     public Game selectShadow(Long gameId, SelectShadowRequest request) {
         Game game = getGame(gameId);
 
-        Position position = new Position(request.getRow(), request.getColumn());
+        Position position = SfenPositionConverter.toPosition(request.getPosition());
 
         game.selectShadow(request.getPlayerType(), position);
 
@@ -87,5 +89,11 @@ public class GameService {
     public void finishGame(Long gameId, PlayerType winner) {
         Game game = getGame(gameId);
         game.finish(winner);
+    }
+
+    public Game resign(Long gameId, ResignRequest request) {
+        Game game = getGame(gameId);
+        game.resign(request.getPlayerType());
+        return game;
     }
 }
