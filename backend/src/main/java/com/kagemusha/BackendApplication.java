@@ -1,4 +1,4 @@
-package com.kagemusha.backend;
+package com.kagemusha;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
