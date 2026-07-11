@@ -4,10 +4,12 @@ import com.kagemusha.backend.domain.FinishReason;
 import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 
+import java.util.UUID;
+
 public class GameEvent {
 
     private GameEventType type;
-    private Long gameId;
+    private UUID gameId;
     private GameStatus status;
     private PlayerType currentTurn;
     private PlayerType selectedPlayer;
@@ -17,7 +19,7 @@ public class GameEvent {
 
     public GameEvent(
             GameEventType type,
-            Long gameId,
+            UUID gameId,
             GameStatus status,
             PlayerType currentTurn,
             PlayerType selectedPlayer,
@@ -39,7 +41,7 @@ public class GameEvent {
         return type;
     }
 
-    public Long getGameId() {
+    public UUID getGameId() {
         return gameId;
     }
 

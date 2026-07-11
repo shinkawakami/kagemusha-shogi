@@ -5,6 +5,8 @@ import com.kagemusha.backend.domain.PlayerType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class GameEventPublisher {
 
@@ -89,7 +91,7 @@ public class GameEventPublisher {
         publish(game.getId(), event);
     }
 
-    private void publish(Long gameId, GameEvent event) {
+    private void publish(UUID gameId, GameEvent event) {
         messagingTemplate.convertAndSend(
                 "/topic/games/" + gameId,
                 event

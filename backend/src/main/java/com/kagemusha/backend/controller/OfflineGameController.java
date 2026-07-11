@@ -8,6 +8,8 @@ import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.service.GameService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/offline/games")
 public class OfflineGameController {
@@ -36,7 +38,7 @@ public class OfflineGameController {
      */
     @GetMapping("/{gameId}")
     public GameResponse getOfflineGame(
-            @PathVariable Long gameId
+            @PathVariable UUID gameId
     ) {
         Game game = gameService.getGame(gameId);
 
@@ -55,7 +57,7 @@ public class OfflineGameController {
      */
     @PostMapping("/{gameId}/shadow/{playerType}")
     public GameResponse selectShadow(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @PathVariable PlayerType playerType,
             @RequestBody SelectShadowRequest request
     ) {
@@ -75,7 +77,7 @@ public class OfflineGameController {
      */
     @PostMapping("/{gameId}/moves")
     public GameResponse move(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestBody MoveRequest request
     ) {
         Game game = gameService.moveOffline(
@@ -98,7 +100,7 @@ public class OfflineGameController {
      */
     @PostMapping("/{gameId}/resign/{playerType}")
     public GameResponse resign(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @PathVariable PlayerType playerType
     ) {
         Game game = gameService.resignOffline(

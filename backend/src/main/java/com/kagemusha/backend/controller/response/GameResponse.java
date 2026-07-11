@@ -7,9 +7,11 @@ import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 
+import java.util.UUID;
+
 public class GameResponse {
 
-    private Long gameId;
+    private UUID gameId;
 
     /**
      * 対局状態全体のSFEN文字列（盤面・手番・持ち駒・手数を含む）。
@@ -97,7 +99,7 @@ public class GameResponse {
         return response;
     }
 
-    public Long getGameId() {
+    public UUID getGameId() {
         return gameId;
     }
 
