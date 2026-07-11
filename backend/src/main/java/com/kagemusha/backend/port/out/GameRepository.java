@@ -2,6 +2,7 @@ package com.kagemusha.backend.port.out;
 
 import com.kagemusha.backend.domain.Game;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,4 +38,21 @@ public interface GameRepository {
      * @return 対局。存在しなければ {@link Optional#empty()}。
      */
     Optional<Game> findById(UUID id);
+
+    /**
+     * 放置された対局を削除する。
+     *
+     * <p>「放置」とは、<strong>終局していない（{@code status != FINISHED}）</strong>かつ
+     * {@code updatedBefore} より前から更新のない対局を指す。相手待ちのまま参加されない対局や、
+     * 途中で中断された対局が対象。{@code updated_at} は着手・参加などの操作ごとに更新されるため、
+     * 進行中の対局は削除されない。
+     *
+     * <p>終局済みの対局は棋譜・戦績として保持するため削除しない。
+     * 子行（{@code game_players} / {@code game_moves} / {@code shadow_selections}）は
+     * {@code ON DELETE CASCADE} により連鎖削除される。
+     *
+     * @param updatedBefore この時刻より {@code updated_at} が古い対局を対象にする
+     * @return 削除した対局数
+     */
+    int deleteAbandoned(OffsetDateTime updatedBefore);
 }
