@@ -16,9 +16,16 @@ public class Game {
     private CapturedPieces capturedPieces;
     private int moveNumber;
     private GameStatus status;
-    private PlayerType winner;
+    private GameMode mode;
+
+    private String senteUserToken;
+    private String goteUserToken;
+
     private Position senteShadowPosition;
     private Position goteShadowPosition;
+
+    private PlayerType winner;
+    private FinishReason finishReason;
 
     public Game(
             Long id,
@@ -31,14 +38,93 @@ public class Game {
         this.currentTurn = currentTurn;
         this.capturedPieces = capturedPieces;
         this.moveNumber = moveNumber;
-        this.status = GameStatus.PLAYING;
-        this.winner = null;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public PlayerType getCurrentTurn() {
+        return currentTurn;
+    }
+
+    public CapturedPieces getCapturedPieces() {
+        return capturedPieces;
+    }
+
+    public int getMoveNumber() {
+        return moveNumber;
+    }
+
+    public GameStatus getStatus() {
+        return status;
+    }
+
+    public GameMode getMode() {
+        return mode;
+    }
+
+    public String getSenteUserToken() {
+        return senteUserToken;
+    }
+
+    public String getGoteUserToken() {
+        return goteUserToken;
+    }
+
+    public Position getSenteShadowPosition() {
+        return senteShadowPosition;
+    }
+
+    public Position getGoteShadowPosition() {
+        return goteShadowPosition;
+    }
+
+    public PlayerType getWinner() {
+        return winner;
+    }
+
+    public FinishReason getFinishReason() {
+        return finishReason;
     }
 
     /**
-     * 初期状態のゲームを作成する
+     * オフライン対局を初期状態で作成する。
+     *
+     * 生成時点で影武者選択状態にする。
      */
-    public static Game createInitialGame(Long id) {
+    public static Game createOffline(Long id) {
+        Game game = createInitial(id);
+        game.mode = GameMode.OFFLINE;
+        game.status = GameStatus.SELECTING_SHADOW;
+
+        return game;
+    }
+
+    /**
+     * オンライン対局を初期状態で作成する。
+     *
+     * 作成者を先手として登録し、相手の参加を待つ状態にする。
+     */
+    public static Game createOnline(Long id, String senteUserToken) {
+        Game game = createInitial(id);
+        game.mode = GameMode.ONLINE;
+        game.status = GameStatus.WAITING;
+        game.senteUserToken = senteUserToken;
+
+        return game;
+    }
+
+    /**
+     * 初期局面の盤面・手番・持ち駒・手数を持つゲームを生成する。
+     *
+     * モード・状態・トークンは各ファクトリメソッドで確定させる。
+     */
+    private static Game createInitial(Long id) {
         Board board = SfenConverter.toBoard(SfenConstants.INITIAL_SFEN);
         PlayerType currentTurn = SfenConverter.extractCurrentTurn(SfenConstants.INITIAL_SFEN);
         CapturedPieces capturedPieces = SfenConverter.extractCapturedPieces(SfenConstants.INITIAL_SFEN);
@@ -53,11 +139,25 @@ public class Game {
     }
 
     /**
+     * オンライン対局に後手として参加する。
+     *
+     * 相手待ち状態のときだけ参加でき、参加後は影武者選択状態にする。
+     */
+    public void join(String goteUserToken) {
+        if (status != GameStatus.WAITING) {
+            throw new IllegalArgumentException("この対局には参加できません");
+        }
+
+        this.goteUserToken = goteUserToken;
+        this.status = GameStatus.SELECTING_SHADOW;
+    }
+
+    /**
      * 駒を移動する
      */
     public void move(String moveText) {
-        if (status == GameStatus.FINISHED) {
-            throw new IllegalStateException("すでに終了したゲームです");
+        if (status != GameStatus.PLAYING) {
+            throw new IllegalStateException("対局中ではありません");
         }
 
         SfenMove move = SfenMoveParser.parse(moveText);
@@ -122,51 +222,13 @@ public class Game {
         );
 
         if (capturedShadow) {
-            finish(movingPiece.getOwner());
+            finish(movingPiece.getOwner(), FinishReason.SHADOW_CAPTURED);
             moveNumber++;
             return;
         }
 
         switchTurn();
         moveNumber++;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Board getBoard() {
-        return board;
-    }
-
-    public PlayerType getCurrentTurn() {
-        return currentTurn;
-    }
-
-    public CapturedPieces getCapturedPieces() {
-        return capturedPieces;
-    }
-
-    public int getMoveNumber() {
-        return moveNumber;
-    }
-
-    public GameStatus getStatus() {
-        return status;
-    }
-
-    public PlayerType getWinner() {
-        return winner;
-    }
-
-    /**
-     * 盤面部分だけのSFENを返す。
-     *
-     * 例:
-     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
-     */
-    public String getBoardSfen() {
-        return SfenConverter.fromBoardOnly(board);
     }
 
     /**
@@ -185,15 +247,20 @@ public class Game {
     }
 
     public void switchTurn() {
-        this.currentTurn = this.currentTurn.opposite();
+        this.currentTurn = this.currentTurn.opponent();
     }
 
-    public void finish(PlayerType winner) {
+    public void finish(PlayerType winner, FinishReason finishReason) {
         this.status = GameStatus.FINISHED;
         this.winner = winner;
+        this.finishReason = finishReason;
     }
 
     public void selectShadow(PlayerType playerType, Position position) {
+        if (status != GameStatus.SELECTING_SHADOW) {
+            throw new IllegalStateException("影武者選択中ではありません");
+        }
+
         Piece piece = board.getPiece(position);
 
         if (piece == null) {
@@ -221,7 +288,7 @@ public class Game {
         }
     }
 
-    public Position getShadowPosition(PlayerType playerType) {
+    private Position getShadowPosition(PlayerType playerType) {
         return playerType == PlayerType.SENTE
                 ? senteShadowPosition
                 : goteShadowPosition;
@@ -250,8 +317,27 @@ public class Game {
             throw new IllegalStateException("すでに終了したゲームです");
         }
 
-        PlayerType winner = playerType.opposite();
+        PlayerType winner = playerType.opponent();
 
-        finish(winner);
+        finish(winner, FinishReason.RESIGN);
+    }
+
+    /**
+     * userTokenから先手・後手を判定する。
+     */
+    public PlayerType resolvePlayerType(String userToken) {
+        if (userToken == null || userToken.isBlank()) {
+            throw new IllegalArgumentException("userTokenが必要です");
+        }
+
+        if (userToken.equals(senteUserToken)) {
+            return PlayerType.SENTE;
+        }
+
+        if (userToken.equals(goteUserToken)) {
+            return PlayerType.GOTE;
+        }
+
+        throw new IllegalArgumentException("この対局の参加者ではありません");
     }
 }
