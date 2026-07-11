@@ -6,11 +6,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Map;
 
+/**
+ * 例外を HTTP ステータスへマッピングする。
+ *
+ * <p>{@link ResponseEntityExceptionHandler} を継承し、ヘッダ欠落や不正な
+ * リクエストボディなど Spring MVC 標準の例外は基底クラスに委ねて正しい 4xx を返す。
+ * ドメイン由来の例外と、それ以外の想定外例外のみここで扱う。
+ */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * 対局が存在しない場合は 404 Not Found を返す。
@@ -41,9 +49,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 想定外の例外は 500 Internal Server Error として汎用メッセージを返す。
+     * 上記いずれにも該当しない想定外の例外は 500 Internal Server Error として
+     * 汎用メッセージを返す（スタックトレースや内部メッセージは露出しない）。
      *
-     * <p>スタックトレースや内部メッセージはレスポンスに含めない（内部情報の露出防止）。
+     * <p>ヘッダ欠落・不正なボディなど Spring MVC 標準の例外は基底クラスが
+     * より具体的なハンドラで先に処理するため、ここには到達しない。
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleUnexpected(Exception ex) {
