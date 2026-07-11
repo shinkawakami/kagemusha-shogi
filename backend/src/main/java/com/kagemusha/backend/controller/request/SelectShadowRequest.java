@@ -1,17 +1,14 @@
 package com.kagemusha.backend.controller.request;
 
-import com.kagemusha.backend.domain.PlayerType;
-
 public class SelectShadowRequest {
 
-    private PlayerType playerType;
     private String position;
-
-    public PlayerType getPlayerType() {
-        return playerType;
-    }
 
     public String getPosition() {
         return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
     }
 }

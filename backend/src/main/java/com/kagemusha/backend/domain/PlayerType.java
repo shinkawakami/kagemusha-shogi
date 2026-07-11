@@ -19,7 +19,7 @@ public enum PlayerType {
      *
      * @return 相手プレイヤー
      */
-    public PlayerType opposite() {
+    public PlayerType opponent() {
         return this == SENTE ? GOTE : SENTE;
     }
 

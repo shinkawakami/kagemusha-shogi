@@ -16,9 +16,16 @@ public class Game {
     private CapturedPieces capturedPieces;
     private int moveNumber;
     private GameStatus status;
-    private PlayerType winner;
+    private GameMode mode;
+
+    private String senteUserToken;
+    private String goteUserToken;
+
     private Position senteShadowPosition;
     private Position goteShadowPosition;
+
+    private PlayerType winner;
+    private FinishReason finishReason;
 
     public Game(
             Long id,
@@ -32,7 +39,90 @@ public class Game {
         this.capturedPieces = capturedPieces;
         this.moveNumber = moveNumber;
         this.status = GameStatus.PLAYING;
-        this.winner = null;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public PlayerType getCurrentTurn() {
+        return currentTurn;
+    }
+
+    public CapturedPieces getCapturedPieces() {
+        return capturedPieces;
+    }
+
+    public int getMoveNumber() {
+        return moveNumber;
+    }
+
+    public GameStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(GameStatus status) {
+        this.status = status;
+    }
+
+    public GameMode getMode() {
+        return mode;
+    }
+
+    public void setMode(GameMode mode) {
+        this.mode = mode;
+    }
+
+    public String getSenteUserToken() {
+        return senteUserToken;
+    }
+
+    public void setSenteUserToken(String senteUserToken) {
+        this.senteUserToken = senteUserToken;
+    }
+
+    public String getGoteUserToken() {
+        return goteUserToken;
+    }
+
+    public void setGoteUserToken(String goteUserToken) {
+        this.goteUserToken = goteUserToken;
+    }
+
+    public Position getSenteShadowPosition() {
+        return senteShadowPosition;
+    }
+
+    public void setSenteShadowPosition(Position senteShadowPosition) {
+        this.senteShadowPosition = senteShadowPosition;
+    }
+
+    public Position getGoteShadowPosition() {
+        return goteShadowPosition;
+    }
+
+    public void setGoteShadowPosition(Position goteShadowPosition) {
+        this.goteShadowPosition = goteShadowPosition;
+    }
+
+    public PlayerType getWinner() {
+        return winner;
+    }
+
+    public void setWinner(PlayerType winner) {
+        this.winner = winner;
+    }
+
+    public FinishReason getFinishReason() {
+        return finishReason;
+    }
+
+    public void setFinishReason(FinishReason finishReason) {
+        this.finishReason = finishReason;
     }
 
     /**
@@ -56,8 +146,8 @@ public class Game {
      * 駒を移動する
      */
     public void move(String moveText) {
-        if (status == GameStatus.FINISHED) {
-            throw new IllegalStateException("すでに終了したゲームです");
+        if (status != GameStatus.PLAYING) {
+            throw new IllegalStateException("対局中ではありません");
         }
 
         SfenMove move = SfenMoveParser.parse(moveText);
@@ -122,41 +212,13 @@ public class Game {
         );
 
         if (capturedShadow) {
-            finish(movingPiece.getOwner());
+            finish(movingPiece.getOwner(), FinishReason.SHADOW_CAPTURED);
             moveNumber++;
             return;
         }
 
         switchTurn();
         moveNumber++;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Board getBoard() {
-        return board;
-    }
-
-    public PlayerType getCurrentTurn() {
-        return currentTurn;
-    }
-
-    public CapturedPieces getCapturedPieces() {
-        return capturedPieces;
-    }
-
-    public int getMoveNumber() {
-        return moveNumber;
-    }
-
-    public GameStatus getStatus() {
-        return status;
-    }
-
-    public PlayerType getWinner() {
-        return winner;
     }
 
     /**
@@ -185,15 +247,20 @@ public class Game {
     }
 
     public void switchTurn() {
-        this.currentTurn = this.currentTurn.opposite();
+        this.currentTurn = this.currentTurn.opponent();
     }
 
-    public void finish(PlayerType winner) {
+    public void finish(PlayerType winner, FinishReason finishReason) {
         this.status = GameStatus.FINISHED;
         this.winner = winner;
+        this.finishReason = finishReason;
     }
 
     public void selectShadow(PlayerType playerType, Position position) {
+        if (status != GameStatus.SELECTING_SHADOW) {
+            throw new IllegalStateException("影武者選択中ではありません");
+        }
+
         Piece piece = board.getPiece(position);
 
         if (piece == null) {
@@ -250,8 +317,27 @@ public class Game {
             throw new IllegalStateException("すでに終了したゲームです");
         }
 
-        PlayerType winner = playerType.opposite();
+        PlayerType winner = playerType.opponent();
 
-        finish(winner);
+        finish(winner, FinishReason.RESIGN);
+    }
+
+    /**
+     * userTokenから先手・後手を判定する。
+     */
+    public PlayerType resolvePlayerType(String userToken) {
+        if (userToken == null || userToken.isBlank()) {
+            throw new IllegalArgumentException("userTokenが必要です");
+        }
+
+        if (userToken.equals(senteUserToken)) {
+            return PlayerType.SENTE;
+        }
+
+        if (userToken.equals(goteUserToken)) {
+            return PlayerType.GOTE;
+        }
+
+        throw new IllegalArgumentException("この対局の参加者ではありません");
     }
 }
