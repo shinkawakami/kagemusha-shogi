@@ -3,9 +3,7 @@ package com.kagemusha.backend.controller;
 import com.kagemusha.backend.controller.request.MoveRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.controller.response.GameResponse;
-import com.kagemusha.backend.controller.response.OnlineGameEntryResponse;
 import com.kagemusha.backend.domain.Game;
-import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.service.GameService;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,16 +28,12 @@ public class OnlineGameController {
      * X-User-Token: player-a
      */
     @PostMapping
-    public OnlineGameEntryResponse createOnlineGame(
+    public GameResponse createOnlineGame(
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
         Game game = gameService.createOnlineGame(userToken);
 
-        return new OnlineGameEntryResponse(
-                game.getId(),
-                game.getStatus(),
-                PlayerType.SENTE
-        );
+        return GameResponse.fromOnline(game, userToken);
     }
 
     /**
@@ -51,7 +45,7 @@ public class OnlineGameController {
      * X-User-Token: player-b
      */
     @PostMapping("/{gameId}/join")
-    public OnlineGameEntryResponse joinOnlineGame(
+    public GameResponse joinOnlineGame(
             @PathVariable Long gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
@@ -60,11 +54,7 @@ public class OnlineGameController {
                 userToken
         );
 
-        return new OnlineGameEntryResponse(
-                game.getId(),
-                game.getStatus(),
-                PlayerType.GOTE
-        );
+        return GameResponse.fromOnline(game, userToken);
     }
 
     /**
