@@ -5,7 +5,7 @@ import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.PlayerType;
-import com.kagemusha.backend.service.GameService;
+import com.kagemusha.backend.port.in.OfflineGameUseCase;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -14,10 +14,10 @@ import java.util.UUID;
 @RequestMapping("/api/offline/games")
 public class OfflineGameController {
 
-    private final GameService gameService;
+    private final OfflineGameUseCase gameUseCase;
 
-    public OfflineGameController(GameService gameService) {
-        this.gameService = gameService;
+    public OfflineGameController(OfflineGameUseCase gameUseCase) {
+        this.gameUseCase = gameUseCase;
     }
 
     /**
@@ -28,7 +28,7 @@ public class OfflineGameController {
      */
     @PostMapping
     public GameResponse createOfflineGame() {
-        Game game = gameService.createOfflineGame();
+        Game game = gameUseCase.createOfflineGame();
 
         return GameResponse.fromOffline(game);
     }
@@ -40,7 +40,7 @@ public class OfflineGameController {
     public GameResponse getOfflineGame(
             @PathVariable UUID gameId
     ) {
-        Game game = gameService.getGame(gameId);
+        Game game = gameUseCase.getGame(gameId);
 
         return GameResponse.fromOffline(game);
     }
@@ -61,7 +61,7 @@ public class OfflineGameController {
             @PathVariable PlayerType playerType,
             @RequestBody SelectShadowRequest request
     ) {
-        Game game = gameService.selectShadowOffline(
+        Game game = gameUseCase.selectShadowOffline(
                 gameId,
                 playerType,
                 request.getPosition()
@@ -80,7 +80,7 @@ public class OfflineGameController {
             @PathVariable UUID gameId,
             @RequestBody MoveRequest request
     ) {
-        Game game = gameService.moveOffline(
+        Game game = gameUseCase.moveOffline(
                 gameId,
                 request.getMove()
         );
@@ -103,7 +103,7 @@ public class OfflineGameController {
             @PathVariable UUID gameId,
             @PathVariable PlayerType playerType
     ) {
-        Game game = gameService.resignOffline(
+        Game game = gameUseCase.resignOffline(
                 gameId,
                 playerType
         );

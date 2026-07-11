@@ -209,7 +209,7 @@ public class Game {
      */
     public void join(String goteUserToken) {
         if (status != GameStatus.WAITING) {
-            throw new IllegalArgumentException("この対局には参加できません");
+            throw new IllegalStateException("この対局には参加できません");
         }
 
         this.goteUserToken = goteUserToken;
@@ -366,7 +366,10 @@ public class Game {
         }
     }
 
-    private Position getShadowPosition(PlayerType playerType) {
+    /**
+     * 指定プレイヤーの影武者の位置を返す。未選択の場合は {@code null}。
+     */
+    public Position getShadowPosition(PlayerType playerType) {
         return playerType == PlayerType.SENTE
                 ? senteShadowPosition
                 : goteShadowPosition;

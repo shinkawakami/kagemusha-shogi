@@ -1,5 +1,6 @@
-package com.kagemusha.backend.infrastructure.persistence;
+package com.kagemusha.backend.infrastructure.persistence.repository;
 
+import com.kagemusha.backend.infrastructure.persistence.entity.GameMoveEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

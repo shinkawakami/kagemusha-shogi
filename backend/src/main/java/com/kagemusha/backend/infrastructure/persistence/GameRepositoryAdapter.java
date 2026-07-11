@@ -6,7 +6,15 @@ import com.kagemusha.backend.domain.PlayedMove;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
-import com.kagemusha.backend.port.GameRepository;
+import com.kagemusha.backend.infrastructure.persistence.entity.GameEntity;
+import com.kagemusha.backend.infrastructure.persistence.entity.GameMoveEntity;
+import com.kagemusha.backend.infrastructure.persistence.entity.GamePlayerEntity;
+import com.kagemusha.backend.infrastructure.persistence.entity.ShadowSelectionEntity;
+import com.kagemusha.backend.infrastructure.persistence.repository.GameJpaRepository;
+import com.kagemusha.backend.infrastructure.persistence.repository.GameMoveJpaRepository;
+import com.kagemusha.backend.infrastructure.persistence.repository.GamePlayerJpaRepository;
+import com.kagemusha.backend.infrastructure.persistence.repository.ShadowSelectionJpaRepository;
+import com.kagemusha.backend.port.out.GameRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,20 +27,20 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * {@link GameRepository} ポートの JPA 実装（ヘキサゴナルアーキテクチャの adapter）。
+ * {@link GameRepository} ポートの JPA 実装（ヘキサゴナルアーキテクチャの outbound adapter）。
  *
  * <p>永続化モデル（指し手ログ {@code game_moves} を正、現在局面を投影として維持）を
  * ここに閉じ込める。指し手は追記オンリー、投影・プレイヤー・影武者は upsert する。
  */
 @Repository
-public class JpaGameRepository implements GameRepository {
+public class GameRepositoryAdapter implements GameRepository {
 
     private final GameJpaRepository gameJpa;
     private final GamePlayerJpaRepository playerJpa;
     private final GameMoveJpaRepository moveJpa;
     private final ShadowSelectionJpaRepository shadowJpa;
 
-    public JpaGameRepository(
+    public GameRepositoryAdapter(
             GameJpaRepository gameJpa,
             GamePlayerJpaRepository playerJpa,
             GameMoveJpaRepository moveJpa,

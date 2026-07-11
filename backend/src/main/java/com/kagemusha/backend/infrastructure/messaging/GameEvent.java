@@ -1,71 +1,72 @@
 package com.kagemusha.backend.infrastructure.messaging;
 
 import com.kagemusha.backend.domain.FinishReason;
+import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 
 import java.util.UUID;
 
-public class GameEvent {
+/**
+ * WebSocket で配信する対局イベント。
+ *
+ * <p>種別（{@link GameEventType}）ごとに使うフィールドが異なるため、
+ * コンストラクタを直接使わず種別ごとのファクトリメソッドで生成する。
+ * 未使用フィールドは {@code null} になる。
+ */
+public record GameEvent(
+        GameEventType type,
+        UUID gameId,
+        GameStatus status,
+        PlayerType currentTurn,
+        PlayerType selectedPlayer,
+        String lastMove,
+        PlayerType winner,
+        FinishReason finishReason
+) {
 
-    private GameEventType type;
-    private UUID gameId;
-    private GameStatus status;
-    private PlayerType currentTurn;
-    private PlayerType selectedPlayer;
-    private String lastMove;
-    private PlayerType winner;
-    private FinishReason finishReason;
-
-    public GameEvent(
-            GameEventType type,
-            UUID gameId,
-            GameStatus status,
-            PlayerType currentTurn,
-            PlayerType selectedPlayer,
-            String lastMove,
-            PlayerType winner,
-            FinishReason finishReason
-    ) {
-        this.type = type;
-        this.gameId = gameId;
-        this.status = status;
-        this.currentTurn = currentTurn;
-        this.selectedPlayer = selectedPlayer;
-        this.lastMove = lastMove;
-        this.winner = winner;
-        this.finishReason = finishReason;
+    /** 後手が参加した。 */
+    public static GameEvent playerJoined(Game game) {
+        return new GameEvent(
+                GameEventType.PLAYER_JOINED,
+                game.getId(), game.getStatus(), game.getCurrentTurn(),
+                null, null, null, null
+        );
     }
 
-    public GameEventType getType() {
-        return type;
+    /** 影武者が選択された。 */
+    public static GameEvent shadowSelected(Game game, PlayerType selectedPlayer) {
+        return new GameEvent(
+                GameEventType.SHADOW_SELECTED,
+                game.getId(), game.getStatus(), game.getCurrentTurn(),
+                selectedPlayer, null, null, null
+        );
     }
 
-    public UUID getGameId() {
-        return gameId;
+    /** 対局が開始した。 */
+    public static GameEvent gameStarted(Game game) {
+        return new GameEvent(
+                GameEventType.GAME_STARTED,
+                game.getId(), game.getStatus(), game.getCurrentTurn(),
+                null, null, null, null
+        );
     }
 
-    public GameStatus getStatus() {
-        return status;
+    /** 指し手が行われた。 */
+    public static GameEvent move(Game game, String lastMove) {
+        return new GameEvent(
+                GameEventType.MOVE,
+                game.getId(), game.getStatus(), game.getCurrentTurn(),
+                null, lastMove, null, null
+        );
     }
 
-    public PlayerType getCurrentTurn() {
-        return currentTurn;
-    }
-
-    public PlayerType getSelectedPlayer() {
-        return selectedPlayer;
-    }
-
-    public String getLastMove() {
-        return lastMove;
-    }
-
-    public PlayerType getWinner() {
-        return winner;
-    }
-
-    public FinishReason getFinishReason() {
-        return finishReason;
+    /** 対局が終了した。 */
+    public static GameEvent gameFinished(Game game) {
+        return new GameEvent(
+                GameEventType.GAME_FINISHED,
+                game.getId(), game.getStatus(), game.getCurrentTurn(),
+                null, null, game.getWinner(), game.getFinishReason()
+        );
     }
 }

@@ -1,4 +1,4 @@
-package com.kagemusha.backend.infrastructure.persistence;
+package com.kagemusha.backend.infrastructure.persistence.entity;
 
 import com.kagemusha.backend.domain.FinishReason;
 import com.kagemusha.backend.domain.GameMode;

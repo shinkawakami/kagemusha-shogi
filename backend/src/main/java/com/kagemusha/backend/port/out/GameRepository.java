@@ -1,4 +1,4 @@
-package com.kagemusha.backend.port;
+package com.kagemusha.backend.port.out;
 
 import com.kagemusha.backend.domain.Game;
 
@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 対局アグリゲートの永続化ポート（ヘキサゴナルアーキテクチャの port）。
+ * 対局アグリゲートの永続化ポート（ヘキサゴナルアーキテクチャの outbound port）。
  *
  * <p>application 層（{@code GameService}）はこのインターフェースにのみ依存し、
  * JPA などの永続化技術には依存しない。実装（adapter）は

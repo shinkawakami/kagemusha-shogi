@@ -63,7 +63,7 @@ public class SfenMoveParser {
     private static SfenMove parseDropMove(String move) {
         char pieceChar = move.charAt(0);
 
-        PieceType pieceType = PieceType.fromSfenSymbol(String.valueOf(pieceChar));
+        PieceType pieceType = SfenPieceSymbol.fromSymbol(String.valueOf(pieceChar));
 
         if (pieceType == PieceType.GYOKU) {
             throw new IllegalArgumentException("王は持ち駒として打てません: " + move);

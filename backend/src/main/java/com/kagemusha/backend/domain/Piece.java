@@ -1,10 +1,12 @@
 package com.kagemusha.backend.domain;
 
+import java.util.Objects;
+
 /**
- * 将棋の駒を表すクラス。
+ * 将棋の駒を表す値オブジェクト。
  *
  * 駒の種類、所有者、成り状態を持つ。
- * このクラスは不変オブジェクトとして扱い、生成後に状態は変更しない。
+ * 不変オブジェクトであり、種類・所有者・成り状態がすべて等しい駒は等価として扱う。
  */
 public class Piece {
 
@@ -81,26 +83,27 @@ public class Piece {
     }
 
     /**
-     * 駒をSFEN形式の文字列に変換する。
+     * 種類・所有者・成り状態がすべて等しい場合に等価とみなす。
      *
-     * 先手の駒は大文字、後手の駒は小文字で表す。
-     * 成り駒の場合は、駒文字の前に {@code +} を付ける。
-     *
-     * 例：
-     * 先手の歩は {@code P}、
-     * 後手の歩は {@code p}、
-     * 先手の成歩は {@code +P}、
-     * 後手の成歩は {@code +p}。
-     *
-     * @return SFEN形式の駒文字列
+     * @param o 比較対象
+     * @return 等価な駒の場合は true
      */
-    public String toSfenSymbol() {
-        String symbol = type.getSfenSymbol();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Piece piece)) return false;
+        return promoted == piece.promoted && type == piece.type && owner == piece.owner;
+    }
 
-        if (owner == PlayerType.GOTE) {
-            symbol = symbol.toLowerCase();
-        }
-
-        return promoted ? "+" + symbol : symbol;
+    /**
+     * 駒のハッシュ値を返す。
+     *
+     * equals と同じく、種類・所有者・成り状態をもとに生成する。
+     *
+     * @return ハッシュ値
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, owner, promoted);
     }
 }

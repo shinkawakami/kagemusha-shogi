@@ -1,4 +1,4 @@
-package com.kagemusha.backend.port;
+package com.kagemusha.backend.port.out;
 
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.PlayerType;

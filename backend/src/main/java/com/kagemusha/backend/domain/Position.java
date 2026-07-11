@@ -51,7 +51,7 @@ public class Position {
      * @return 盤内の場合は true、盤外の場合は false
      */
     public static boolean isInsideBoard(int row, int col) {
-        return row >= 1 && row <= 9 && col >= 1 && col <= 9;
+        return row >= 1 && row <= Board.SIZE && col >= 1 && col <= Board.SIZE;
     }
 
     /**

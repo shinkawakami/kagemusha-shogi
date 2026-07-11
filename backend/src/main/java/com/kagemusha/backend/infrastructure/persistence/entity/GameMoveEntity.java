@@ -1,4 +1,4 @@
-package com.kagemusha.backend.infrastructure.persistence;
+package com.kagemusha.backend.infrastructure.persistence.entity;
 
 import com.kagemusha.backend.domain.PlayerType;
 import jakarta.persistence.Column;
