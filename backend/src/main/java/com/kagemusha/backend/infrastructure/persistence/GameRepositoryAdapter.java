@@ -70,6 +70,13 @@ public class GameRepositoryAdapter implements GameRepository {
     }
 
     @Override
+    @Transactional
+    public int deleteAbandoned(OffsetDateTime updatedBefore) {
+        // 終局済み（棋譜・戦績として保持する）は除外。子行は ON DELETE CASCADE で連鎖削除される。
+        return gameJpa.deleteByStatusNotAndUpdatedAtBefore(GameStatus.FINISHED, updatedBefore);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<Game> findById(UUID id) {
         Optional<GameEntity> gameEntity = gameJpa.findById(id);
