@@ -9,6 +9,11 @@ package com.kagemusha.backend.domain;
 public class Board {
 
     /**
+     * 盤の一辺のマス数（9×9）。
+     */
+    public static final int SIZE = 9;
+
+    /**
      * 盤面上のマス。
      *
      * 第一添字が行、第二添字が列を表す。
@@ -21,7 +26,7 @@ public class Board {
      * 空の 9×9 盤面を生成する。
      */
     public Board() {
-        this.squares = new Piece[9][9];
+        this.squares = new Piece[SIZE][SIZE];
     }
 
     /**

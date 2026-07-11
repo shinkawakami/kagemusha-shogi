@@ -2,9 +2,9 @@ package com.kagemusha.backend.infrastructure.messaging;
 
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.PlayerType;
-import com.kagemusha.backend.port.GameEventPort;
+import com.kagemusha.backend.port.out.GameEventPort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
  *
  * <p>対局イベントを {@code /topic/games/{gameId}} へ配信する。
  */
-@Service
+@Component
 public class StompGameEventPublisher implements GameEventPort {
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -24,82 +24,27 @@ public class StompGameEventPublisher implements GameEventPort {
 
     @Override
     public void publishPlayerJoined(Game game) {
-        GameEvent event = new GameEvent(
-                GameEventType.PLAYER_JOINED,
-                game.getId(),
-                game.getStatus(),
-                game.getCurrentTurn(),
-                null,
-                null,
-                null,
-                null
-        );
-
-        publish(game.getId(), event);
+        publish(game.getId(), GameEvent.playerJoined(game));
     }
 
     @Override
     public void publishShadowSelected(Game game, PlayerType selectedPlayer) {
-        GameEvent event = new GameEvent(
-                GameEventType.SHADOW_SELECTED,
-                game.getId(),
-                game.getStatus(),
-                game.getCurrentTurn(),
-                selectedPlayer,
-                null,
-                null,
-                null
-        );
-
-        publish(game.getId(), event);
+        publish(game.getId(), GameEvent.shadowSelected(game, selectedPlayer));
     }
 
     @Override
     public void publishGameStarted(Game game) {
-        GameEvent event = new GameEvent(
-                GameEventType.GAME_STARTED,
-                game.getId(),
-                game.getStatus(),
-                game.getCurrentTurn(),
-                null,
-                null,
-                null,
-                null
-        );
-
-        publish(game.getId(), event);
+        publish(game.getId(), GameEvent.gameStarted(game));
     }
 
     @Override
     public void publishMove(Game game, String lastMove) {
-        GameEvent event = new GameEvent(
-                GameEventType.MOVE,
-                game.getId(),
-                game.getStatus(),
-                game.getCurrentTurn(),
-                null,
-                lastMove,
-                null,
-                null
-        );
-
-        publish(game.getId(), event);
+        publish(game.getId(), GameEvent.move(game, lastMove));
     }
 
     @Override
     public void publishGameFinished(Game game) {
-        GameEvent event = new GameEvent(
-                GameEventType.GAME_FINISHED,
-                game.getId(),
-                game.getStatus(),
-                game.getCurrentTurn(),
-                null,
-                null,
-                game.getWinner(),
-                game.getFinishReason()
-        );
-
-        publish(game.getId(), event);
+        publish(game.getId(), GameEvent.gameFinished(game));
     }
 
     private void publish(UUID gameId, GameEvent event) {

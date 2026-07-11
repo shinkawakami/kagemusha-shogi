@@ -1,13 +1,16 @@
-package com.kagemusha.backend.service;
+package com.kagemusha.backend.application;
 
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.GameMode;
 import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
+import com.kagemusha.backend.domain.exception.GameNotFoundException;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
-import com.kagemusha.backend.port.GameEventPort;
-import com.kagemusha.backend.port.GameRepository;
+import com.kagemusha.backend.port.in.OfflineGameUseCase;
+import com.kagemusha.backend.port.in.OnlineGameUseCase;
+import com.kagemusha.backend.port.out.GameEventPort;
+import com.kagemusha.backend.port.out.GameRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -15,8 +18,15 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.UUID;
 
+/**
+ * 対局ユースケースの application 層実装。
+ *
+ * <p>オフライン・オンライン両方の inbound port を実装する。
+ * 永続化・イベント配信は outbound port（{@link GameRepository} /
+ * {@link GameEventPort}）経由で行い、具体技術には依存しない。
+ */
 @Service
-public class GameService {
+public class GameService implements OfflineGameUseCase, OnlineGameUseCase {
 
     private final GameRepository gameRepository;
     private final GameEventPort gameEventPublisher;
@@ -35,6 +45,7 @@ public class GameService {
      * オフラインは1つのブラウザで先手・後手が交互に操作する。
      * userTokenやWebSocket通知は使わない。
      */
+    @Override
     @Transactional
     public Game createOfflineGame() {
         Game game = Game.createOffline(UUID.randomUUID());
@@ -47,6 +58,7 @@ public class GameService {
      *
      * 作成者は先手になる。
      */
+    @Override
     @Transactional
     public Game createOnlineGame(String userToken) {
         validateUserToken(userToken);
@@ -62,6 +74,7 @@ public class GameService {
      * 参加者は後手になる。
      * 参加後は影武者選択状態にする。
      */
+    @Override
     @Transactional
     public Game joinOnlineGame(UUID gameId, String userToken) {
         validateUserToken(userToken);
@@ -84,10 +97,11 @@ public class GameService {
     /**
      * 対局を取得する。
      */
+    @Override
     @Transactional(readOnly = true)
     public Game getGame(UUID gameId) {
         return gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("対局が見つかりません: " + gameId));
+                .orElseThrow(() -> new GameNotFoundException(gameId));
     }
 
     /**
@@ -96,6 +110,7 @@ public class GameService {
      * オフラインでは userToken がないため、
      * Controllerから PlayerType を受け取る。
      */
+    @Override
     @Transactional
     public Game selectShadowOffline(
             UUID gameId,
@@ -118,6 +133,7 @@ public class GameService {
      *
      * userTokenから先手・後手を判定する。
      */
+    @Override
     @Transactional
     public Game selectShadowOnline(
             UUID gameId,
@@ -150,6 +166,7 @@ public class GameService {
      * オフラインでは現在の手番のプレイヤーが指した扱いにする。
      * Game.move() 側で currentTurn を使って処理する。
      */
+    @Override
     @Transactional
     public Game moveOffline(
             UUID gameId,
@@ -173,6 +190,7 @@ public class GameService {
      * 並行して同じ手数への着手が来た場合は、
      * game_moves の UNIQUE(game_id, ply) 制約により後発が失敗する（楽観ロック）。
      */
+    @Override
     @Transactional
     public Game moveOnline(
             UUID gameId,
@@ -208,6 +226,7 @@ public class GameService {
      * オフラインでは userToken がないため、
      * Controllerから投了者を受け取る。
      */
+    @Override
     @Transactional
     public Game resignOffline(
             UUID gameId,
@@ -227,6 +246,7 @@ public class GameService {
      *
      * userTokenから投了者を判定する。
      */
+    @Override
     @Transactional
     public Game resignOnline(
             UUID gameId,

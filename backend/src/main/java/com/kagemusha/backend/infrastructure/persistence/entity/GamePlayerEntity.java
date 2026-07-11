@@ -1,4 +1,4 @@
-package com.kagemusha.backend.infrastructure.persistence;
+package com.kagemusha.backend.infrastructure.persistence.entity;
 
 import com.kagemusha.backend.domain.PlayerType;
 import jakarta.persistence.Column;
@@ -15,18 +15,17 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * 影武者選択（秘匿情報）を表す永続化エンティティ。
+ * 対局のプレイヤー割当（先手 / 後手）を表す永続化エンティティ。
  *
- * <p>{@code shadow_selections} テーブルに対応する。先手 / 後手で行を分け、
- * {@code position} は SFEN/USI 形式の座標文字列（例 "7g"）。
- * 影武者の駒が動くと {@code position} は更新される。
+ * <p>{@code game_players} テーブルに対応する。オンラインでは
+ * {@code userToken} でプレイヤーを識別する。オフラインは token を持たない。
  */
 @Entity
-@Table(name = "shadow_selections")
+@Table(name = "game_players")
 @Getter
 @Setter
 @NoArgsConstructor
-public class ShadowSelectionEntity {
+public class GamePlayerEntity {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -39,9 +38,9 @@ public class ShadowSelectionEntity {
     @Column(name = "player_type", nullable = false, length = 8)
     private PlayerType playerType;
 
-    @Column(name = "position", nullable = false, length = 4)
-    private String position;
+    @Column(name = "user_token", columnDefinition = "text")
+    private String userToken;
 
-    @Column(name = "selected_at", nullable = false)
-    private OffsetDateTime selectedAt;
+    @Column(name = "joined_at", nullable = false)
+    private OffsetDateTime joinedAt;
 }

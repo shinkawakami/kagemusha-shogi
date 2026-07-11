@@ -4,7 +4,7 @@ import com.kagemusha.backend.controller.request.MoveRequest;
 import com.kagemusha.backend.controller.request.SelectShadowRequest;
 import com.kagemusha.backend.controller.response.GameResponse;
 import com.kagemusha.backend.domain.Game;
-import com.kagemusha.backend.service.GameService;
+import com.kagemusha.backend.port.in.OnlineGameUseCase;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -15,10 +15,10 @@ public class OnlineGameController {
 
     private static final String USER_TOKEN_HEADER = "X-User-Token";
 
-    private final GameService gameService;
+    private final OnlineGameUseCase gameUseCase;
 
-    public OnlineGameController(GameService gameService) {
-        this.gameService = gameService;
+    public OnlineGameController(OnlineGameUseCase gameUseCase) {
+        this.gameUseCase = gameUseCase;
     }
 
     /**
@@ -33,7 +33,7 @@ public class OnlineGameController {
     public GameResponse createOnlineGame(
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
-        Game game = gameService.createOnlineGame(userToken);
+        Game game = gameUseCase.createOnlineGame(userToken);
 
         return GameResponse.fromOnline(game, userToken);
     }
@@ -51,7 +51,7 @@ public class OnlineGameController {
             @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
-        Game game = gameService.joinOnlineGame(
+        Game game = gameUseCase.joinOnlineGame(
                 gameId,
                 userToken
         );
@@ -71,7 +71,7 @@ public class OnlineGameController {
             @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
-        Game game = gameService.getGame(gameId);
+        Game game = gameUseCase.getGame(gameId);
 
         return GameResponse.fromOnline(
                 game,
@@ -91,7 +91,7 @@ public class OnlineGameController {
             @RequestHeader(USER_TOKEN_HEADER) String userToken,
             @RequestBody SelectShadowRequest request
     ) {
-        Game game = gameService.selectShadowOnline(
+        Game game = gameUseCase.selectShadowOnline(
                 gameId,
                 userToken,
                 request.getPosition()
@@ -115,7 +115,7 @@ public class OnlineGameController {
             @RequestHeader(USER_TOKEN_HEADER) String userToken,
             @RequestBody MoveRequest request
     ) {
-        Game game = gameService.moveOnline(
+        Game game = gameUseCase.moveOnline(
                 gameId,
                 userToken,
                 request.getMove()
@@ -137,7 +137,7 @@ public class OnlineGameController {
             @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
-        Game game = gameService.resignOnline(
+        Game game = gameUseCase.resignOnline(
                 gameId,
                 userToken
         );

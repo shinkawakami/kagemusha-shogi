@@ -9,33 +9,32 @@ import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 
 import java.util.UUID;
 
-public class GameResponse {
-
-    private UUID gameId;
-
-    /**
-     * 対局状態全体のSFEN文字列（盤面・手番・持ち駒・手数を含む）。
-     *
-     * フロントエンドはこの文字列をパースして盤面・手番・持ち駒などを描画する。
-     */
-    private String sfen;
-
-    private GameStatus status;
-
-    private PlayerType myPlayerType;
-
-    /**
-     * 自分の影武者の位置（SFEN/USI形式の座標文字列。例 "7g"）。
-     *
-     * 未選択の場合は null。相手の影武者位置は返さない。
-     */
-    private String myShadowPosition;
-
-    private boolean senteShadowSelected;
-    private boolean goteShadowSelected;
-
-    private PlayerType winner;
-    private FinishReason finishReason;
+/**
+ * 対局状態のレスポンス DTO。
+ *
+ * @param gameId              対局ID
+ * @param sfen                対局状態全体のSFEN文字列（盤面・手番・持ち駒・手数を含む）。
+ *                            フロントエンドはこれをパースして描画する。
+ * @param status              対局ステータス
+ * @param myPlayerType        自分が先手か後手か。オフラインでは {@code null}。
+ * @param myShadowPosition    自分の影武者位置（SFEN/USI形式。例 "7g"）。未選択・オフラインでは {@code null}。
+ *                            相手の影武者位置は返さない。
+ * @param senteShadowSelected 先手が影武者を選択済みか
+ * @param goteShadowSelected  後手が影武者を選択済みか
+ * @param winner              勝者。未決着なら {@code null}。
+ * @param finishReason        終局理由。未決着なら {@code null}。
+ */
+public record GameResponse(
+        UUID gameId,
+        String sfen,
+        GameStatus status,
+        PlayerType myPlayerType,
+        String myShadowPosition,
+        boolean senteShadowSelected,
+        boolean goteShadowSelected,
+        PlayerType winner,
+        FinishReason finishReason
+) {
 
     /**
      * オフライン対局用レスポンス。
@@ -46,22 +45,17 @@ public class GameResponse {
      * 影武者が選択済みかどうかは senteShadowSelected / goteShadowSelected で表す。
      */
     public static GameResponse fromOffline(Game game) {
-        GameResponse response = new GameResponse();
-
-        response.gameId = game.getId();
-        response.sfen = game.getSfen();
-        response.status = game.getStatus();
-
-        response.myPlayerType = null;
-        response.myShadowPosition = null;
-
-        response.senteShadowSelected = game.getSenteShadowPosition() != null;
-        response.goteShadowSelected = game.getGoteShadowPosition() != null;
-
-        response.winner = game.getWinner();
-        response.finishReason = game.getFinishReason();
-
-        return response;
+        return new GameResponse(
+                game.getId(),
+                game.getSfen(),
+                game.getStatus(),
+                null,
+                null,
+                game.getSenteShadowPosition() != null,
+                game.getGoteShadowPosition() != null,
+                game.getWinner(),
+                game.getFinishReason()
+        );
     }
 
     /**
@@ -75,63 +69,18 @@ public class GameResponse {
     public static GameResponse fromOnline(Game game, String userToken) {
         PlayerType myPlayerType = game.resolvePlayerType(userToken);
 
-        Position myShadowPosition = myPlayerType == PlayerType.SENTE
-                ? game.getSenteShadowPosition()
-                : game.getGoteShadowPosition();
+        Position myShadowPosition = game.getShadowPosition(myPlayerType);
 
-        GameResponse response = new GameResponse();
-
-        response.gameId = game.getId();
-        response.sfen = game.getSfen();
-        response.status = game.getStatus();
-
-        response.myPlayerType = myPlayerType;
-        response.myShadowPosition = myShadowPosition == null
-                ? null
-                : SfenPositionConverter.toSfen(myShadowPosition);
-
-        response.senteShadowSelected = game.getSenteShadowPosition() != null;
-        response.goteShadowSelected = game.getGoteShadowPosition() != null;
-
-        response.winner = game.getWinner();
-        response.finishReason = game.getFinishReason();
-
-        return response;
-    }
-
-    public UUID getGameId() {
-        return gameId;
-    }
-
-    public String getSfen() {
-        return sfen;
-    }
-
-    public GameStatus getStatus() {
-        return status;
-    }
-
-    public PlayerType getMyPlayerType() {
-        return myPlayerType;
-    }
-
-    public String getMyShadowPosition() {
-        return myShadowPosition;
-    }
-
-    public boolean isSenteShadowSelected() {
-        return senteShadowSelected;
-    }
-
-    public boolean isGoteShadowSelected() {
-        return goteShadowSelected;
-    }
-
-    public PlayerType getWinner() {
-        return winner;
-    }
-
-    public FinishReason getFinishReason() {
-        return finishReason;
+        return new GameResponse(
+                game.getId(),
+                game.getSfen(),
+                game.getStatus(),
+                myPlayerType,
+                myShadowPosition == null ? null : SfenPositionConverter.toSfen(myShadowPosition),
+                game.getSenteShadowPosition() != null,
+                game.getGoteShadowPosition() != null,
+                game.getWinner(),
+                game.getFinishReason()
+        );
     }
 }

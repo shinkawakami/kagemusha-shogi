@@ -204,10 +204,6 @@ public class MoveValidator {
         int rowDiff = move.getTo().getRow() - move.getFrom().getRow();
         int colDiff = move.getTo().getCol() - move.getFrom().getCol();
 
-        if (rowDiff == 0 && colDiff == 0) {
-            throw new IllegalArgumentException("同じマスには移動できません");
-        }
-
         if (Math.abs(rowDiff) > 1 || Math.abs(colDiff) > 1) {
             throw new IllegalArgumentException("王は周囲1マスにだけ進めます");
         }
@@ -225,10 +221,6 @@ public class MoveValidator {
     private static void validateHishaMove(Board board, SfenMove move) {
         int rowDiff = move.getTo().getRow() - move.getFrom().getRow();
         int colDiff = move.getTo().getCol() - move.getFrom().getCol();
-
-        if (rowDiff == 0 && colDiff == 0) {
-            throw new IllegalArgumentException("同じマスには移動できません");
-        }
 
         if (rowDiff != 0 && colDiff != 0) {
             throw new IllegalArgumentException("飛車は縦横にしか進めません");
@@ -252,10 +244,6 @@ public class MoveValidator {
         int rowDiff = move.getTo().getRow() - move.getFrom().getRow();
         int colDiff = move.getTo().getCol() - move.getFrom().getCol();
 
-        if (rowDiff == 0 && colDiff == 0) {
-            throw new IllegalArgumentException("同じマスには移動できません");
-        }
-
         if (Math.abs(rowDiff) != Math.abs(colDiff)) {
             throw new IllegalArgumentException("角は斜めにしか進めません");
         }
@@ -276,10 +264,6 @@ public class MoveValidator {
     private static void validatePromotedHishaMove(Board board, SfenMove move) {
         int rowDiff = move.getTo().getRow() - move.getFrom().getRow();
         int colDiff = move.getTo().getCol() - move.getFrom().getCol();
-
-        if (rowDiff == 0 && colDiff == 0) {
-            throw new IllegalArgumentException("同じマスには移動できません");
-        }
 
         boolean rookMove = rowDiff == 0 || colDiff == 0;
         boolean diagonalOneStep = Math.abs(rowDiff) == 1 && Math.abs(colDiff) == 1;
@@ -304,10 +288,6 @@ public class MoveValidator {
     private static void validatePromotedKakuMove(Board board, SfenMove move) {
         int rowDiff = move.getTo().getRow() - move.getFrom().getRow();
         int colDiff = move.getTo().getCol() - move.getFrom().getCol();
-
-        if (rowDiff == 0 && colDiff == 0) {
-            throw new IllegalArgumentException("同じマスには移動できません");
-        }
 
         boolean bishopMove = Math.abs(rowDiff) == Math.abs(colDiff);
         boolean straightOneStep = Math.abs(rowDiff) + Math.abs(colDiff) == 1;

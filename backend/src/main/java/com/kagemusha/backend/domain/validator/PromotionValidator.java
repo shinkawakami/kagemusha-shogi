@@ -1,7 +1,6 @@
 package com.kagemusha.backend.domain.validator;
 
 import com.kagemusha.backend.domain.Piece;
-import com.kagemusha.backend.domain.PieceType;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenMove;
@@ -12,24 +11,31 @@ public class PromotionValidator {
     }
 
     /**
-     * 成り指定が正しいか検証する。
+     * 成り指定の妥当性を検証する。
      *
-     * 成り指定がない場合は何もしない。
-     * 成り指定がある場合、成れる駒か、成れる位置か、すでに成っていないかを確認する。
+     * <p>成り指定がある場合は、成れる駒か・成れる位置か・すでに成っていないかを確認する。
+     * 成り指定がない場合は、成らないことで行き所のない駒にならないか（強制成り）を確認する。
      *
      * @param movingPiece 移動する駒
      * @param move 指し手
      */
     public static void validate(Piece movingPiece, SfenMove move) {
-        if (!move.isPromote()) {
-            return;
+        if (move.isPromote()) {
+            validatePromotion(movingPiece, move);
+        } else {
+            validateNotForcedToPromote(movingPiece, move);
         }
+    }
 
+    /**
+     * 成る場合の妥当性を検証する。
+     */
+    private static void validatePromotion(Piece movingPiece, SfenMove move) {
         if (movingPiece.isPromoted()) {
             throw new IllegalArgumentException("すでに成っている駒は再度成れません");
         }
 
-        if (!canPromote(movingPiece.getType())) {
+        if (!movingPiece.getType().canPromote()) {
             throw new IllegalArgumentException("この駒は成れません: " + movingPiece.getType());
         }
 
@@ -40,18 +46,19 @@ public class PromotionValidator {
     }
 
     /**
-     * 成れる駒種かどうかを判定する。
+     * 成らない場合に、行き所のない駒にならないかを検証する。
      *
-     * 王と金は成れない。
-     *
-     * @param type 駒種
-     * @return 成れる場合は true
+     * <p>不成の歩・香が最終段、桂が最終2段へ進む手は、強制成りのため不成では指せない。
+     * すでに成っている駒（金と同じ動き）は行き所を失わないため対象外。
      */
-    private static boolean canPromote(PieceType type) {
-        return switch (type) {
-            case FU, KYO, KEIMA, GIN, HISHA, KAKU -> true;
-            case KIN, GYOKU -> false;
-        };
+    private static void validateNotForcedToPromote(Piece movingPiece, SfenMove move) {
+        if (movingPiece.isPromoted()) {
+            return;
+        }
+
+        if (StuckPieceRule.hasNoFuture(movingPiece.getOwner(), movingPiece.getType(), move.getTo().getRow())) {
+            throw new IllegalArgumentException("行き所のない駒になるため、成らずにこのマスへは進めません");
+        }
     }
 
     /**

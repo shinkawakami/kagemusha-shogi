@@ -11,7 +11,7 @@ public class CommonMoveValidator {
     private CommonMoveValidator() {
     }
 
-    public static void validate(Game game, com.kagemusha.backend.domain.sfen.SfenMove move) {
+    public static void validate(Game game, SfenMove move) {
         validateInsideBoard(move);
         validateDifferentPosition(move);
         validateSourcePieceExists(game.getBoard(), move);

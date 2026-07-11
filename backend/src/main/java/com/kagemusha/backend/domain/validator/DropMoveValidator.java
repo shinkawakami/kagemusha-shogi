@@ -47,33 +47,15 @@ public class DropMoveValidator {
     }
 
     /**
-     * 歩・香・桂を、それ以上動けない段に打つことを禁止する。
+     * 歩・香・桂を、それ以上動けない段（行き所のない駒になる段）に打つことを禁止する。
      */
     private static void validateCannotDropOnDeadRow(
             PlayerType owner,
             PieceType pieceType,
             Position to
     ) {
-        int row = to.getRow();
-
-        if (owner == PlayerType.SENTE) {
-            if ((pieceType == PieceType.FU || pieceType == PieceType.KYO) && row == 1) {
-                throw new IllegalArgumentException("歩・香は一段目に打てません");
-            }
-
-            if (pieceType == PieceType.KEIMA && row <= 2) {
-                throw new IllegalArgumentException("桂馬は一段目・二段目に打てません");
-            }
-
-            return;
-        }
-
-        if ((pieceType == PieceType.FU || pieceType == PieceType.KYO) && row == 9) {
-            throw new IllegalArgumentException("歩・香は九段目に打てません");
-        }
-
-        if (pieceType == PieceType.KEIMA && row >= 8) {
-            throw new IllegalArgumentException("桂馬は八段目・九段目に打てません");
+        if (StuckPieceRule.hasNoFuture(owner, pieceType, to.getRow())) {
+            throw new IllegalArgumentException("行き所のない駒になるため、その段には打てません: " + pieceType);
         }
     }
 
@@ -87,7 +69,7 @@ public class DropMoveValidator {
         Board board = game.getBoard();
         int targetCol = to.getCol();
 
-        for (int row = 1; row <= 9; row++) {
+        for (int row = 1; row <= Board.SIZE; row++) {
             Position position = new Position(row, targetCol);
             Piece piece = board.getPiece(position);
 
