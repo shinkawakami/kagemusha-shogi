@@ -1,4 +1,4 @@
-package com.kagemusha.backend.websocket;
+package com.kagemusha.backend.infrastructure.messaging;
 
 import com.kagemusha.backend.domain.FinishReason;
 import com.kagemusha.backend.domain.GameStatus;

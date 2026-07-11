@@ -6,7 +6,7 @@ import com.kagemusha.backend.domain.PlayedMove;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
-import com.kagemusha.backend.repository.GameRepository;
+import com.kagemusha.backend.port.GameRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 

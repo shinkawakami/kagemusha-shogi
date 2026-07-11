@@ -1,4 +1,4 @@
-package com.kagemusha.backend.repository;
+package com.kagemusha.backend.port;
 
 import com.kagemusha.backend.domain.Game;
 

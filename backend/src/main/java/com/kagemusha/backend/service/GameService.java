@@ -6,8 +6,8 @@ import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
-import com.kagemusha.backend.repository.GameRepository;
-import com.kagemusha.backend.websocket.GameEventPublisher;
+import com.kagemusha.backend.port.GameEventPort;
+import com.kagemusha.backend.port.GameRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -19,11 +19,11 @@ import java.util.UUID;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final GameEventPublisher gameEventPublisher;
+    private final GameEventPort gameEventPublisher;
 
     public GameService(
             GameRepository gameRepository,
-            GameEventPublisher gameEventPublisher
+            GameEventPort gameEventPublisher
     ) {
         this.gameRepository = gameRepository;
         this.gameEventPublisher = gameEventPublisher;
