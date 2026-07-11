@@ -8,9 +8,14 @@ import com.kagemusha.backend.domain.validator.DropMoveValidator;
 import com.kagemusha.backend.domain.validator.MoveValidator;
 import com.kagemusha.backend.domain.validator.PromotionValidator;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 public class Game {
 
-    private final Long id;
+    private final UUID id;
     private Board board;
     private PlayerType currentTurn;
     private CapturedPieces capturedPieces;
@@ -27,8 +32,16 @@ public class Game {
     private PlayerType winner;
     private FinishReason finishReason;
 
+    /**
+     * 実際に指された手の履歴（棋譜）。
+     *
+     * <p>指し手を正（source of truth）として扱うための追記オンリーな列。
+     * 影武者選択や参加はここには含めず、盤上の着手のみを記録する。
+     */
+    private final List<PlayedMove> moves = new ArrayList<>();
+
     public Game(
-            Long id,
+            UUID id,
             Board board,
             PlayerType currentTurn,
             CapturedPieces capturedPieces,
@@ -40,7 +53,7 @@ public class Game {
         this.moveNumber = moveNumber;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -93,11 +106,20 @@ public class Game {
     }
 
     /**
+     * これまでに指された手の履歴（棋譜）を返す。
+     *
+     * <p>返すリストは変更不可。ply の昇順で並ぶ。
+     */
+    public List<PlayedMove> getMoves() {
+        return Collections.unmodifiableList(moves);
+    }
+
+    /**
      * オフライン対局を初期状態で作成する。
      *
      * 生成時点で影武者選択状態にする。
      */
-    public static Game createOffline(Long id) {
+    public static Game createOffline(UUID id) {
         Game game = createInitial(id);
         game.mode = GameMode.OFFLINE;
         game.status = GameStatus.SELECTING_SHADOW;
@@ -110,7 +132,7 @@ public class Game {
      *
      * 作成者を先手として登録し、相手の参加を待つ状態にする。
      */
-    public static Game createOnline(Long id, String senteUserToken) {
+    public static Game createOnline(UUID id, String senteUserToken) {
         Game game = createInitial(id);
         game.mode = GameMode.ONLINE;
         game.status = GameStatus.WAITING;
@@ -124,7 +146,7 @@ public class Game {
      *
      * モード・状態・トークンは各ファクトリメソッドで確定させる。
      */
-    private static Game createInitial(Long id) {
+    private static Game createInitial(UUID id) {
         Board board = SfenConverter.toBoard(SfenConstants.INITIAL_SFEN);
         PlayerType currentTurn = SfenConverter.extractCurrentTurn(SfenConstants.INITIAL_SFEN);
         CapturedPieces capturedPieces = SfenConverter.extractCapturedPieces(SfenConstants.INITIAL_SFEN);
@@ -136,6 +158,48 @@ public class Game {
                 currentTurn,
                 capturedPieces,
                 moveNumber);
+    }
+
+    /**
+     * 永続化された状態から対局を復元する。
+     *
+     * <p>現在局面は SFEN から盤面・手番・持ち駒・手数を復元する。
+     * モード・状態・トークン・影武者・勝敗・棋譜は引数で受け取る。
+     * 永続化層（mapper）から呼ばれる復元用ファクトリ。
+     */
+    public static Game restore(
+            UUID id,
+            GameMode mode,
+            GameStatus status,
+            String sfen,
+            String senteUserToken,
+            String goteUserToken,
+            Position senteShadowPosition,
+            Position goteShadowPosition,
+            PlayerType winner,
+            FinishReason finishReason,
+            List<PlayedMove> moves
+    ) {
+        Board board = SfenConverter.toBoard(sfen);
+        PlayerType currentTurn = SfenConverter.extractCurrentTurn(sfen);
+        CapturedPieces capturedPieces = SfenConverter.extractCapturedPieces(sfen);
+        int moveNumber = SfenConverter.extractMoveNumber(sfen);
+
+        Game game = new Game(id, board, currentTurn, capturedPieces, moveNumber);
+        game.mode = mode;
+        game.status = status;
+        game.senteUserToken = senteUserToken;
+        game.goteUserToken = goteUserToken;
+        game.senteShadowPosition = senteShadowPosition;
+        game.goteShadowPosition = goteShadowPosition;
+        game.winner = winner;
+        game.finishReason = finishReason;
+
+        if (moves != null) {
+            game.moves.addAll(moves);
+        }
+
+        return game;
     }
 
     /**
@@ -160,6 +224,8 @@ public class Game {
             throw new IllegalStateException("対局中ではありません");
         }
 
+        PlayerType mover = currentTurn;
+
         SfenMove move = SfenMoveParser.parse(moveText);
 
         if (move.isDrop()) {
@@ -175,6 +241,7 @@ public class Game {
 
             board.setPiece(move.getTo(), droppedPiece);
 
+            recordMove(moveText, mover);
             switchTurn();
             moveNumber++;
             return;
@@ -222,13 +289,24 @@ public class Game {
         );
 
         if (capturedShadow) {
+            recordMove(moveText, mover);
             finish(movingPiece.getOwner(), FinishReason.SHADOW_CAPTURED);
             moveNumber++;
             return;
         }
 
+        recordMove(moveText, mover);
         switchTurn();
         moveNumber++;
+    }
+
+    /**
+     * 指された手を棋譜に追記する。
+     *
+     * <p>ply は 1 始まりの通し番号で、既存の手数から採番する。
+     */
+    private void recordMove(String moveText, PlayerType mover) {
+        moves.add(new PlayedMove(moves.size() + 1, moveText, mover));
     }
 
     /**

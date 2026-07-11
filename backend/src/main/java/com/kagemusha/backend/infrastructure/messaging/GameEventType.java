@@ -1,4 +1,4 @@
-package com.kagemusha.backend.websocket;
+package com.kagemusha.backend.infrastructure.messaging;
 
 public enum GameEventType {
     PLAYER_JOINED,

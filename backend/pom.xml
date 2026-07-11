@@ -48,6 +48,17 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Spring Boot 4.0 は自動設定がモジュール分割されており、
+		     Flyway の起動時マイグレーションには連携モジュールが必要。
+		     spring-boot-flyway が FlywayAutoConfiguration と flyway-core を推移的に持ち込む。 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

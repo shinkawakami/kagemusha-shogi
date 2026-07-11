@@ -6,22 +6,26 @@ import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
 import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
-import com.kagemusha.backend.websocket.GameEventPublisher;
+import com.kagemusha.backend.port.GameEventPort;
+import com.kagemusha.backend.port.GameRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
 @Service
 public class GameService {
 
-    private final Map<Long, Game> games = new ConcurrentHashMap<>();
-    private final AtomicLong sequence = new AtomicLong(1);
+    private final GameRepository gameRepository;
+    private final GameEventPort gameEventPublisher;
 
-    private final GameEventPublisher gameEventPublisher;
-
-    public GameService(GameEventPublisher gameEventPublisher) {
+    public GameService(
+            GameRepository gameRepository,
+            GameEventPort gameEventPublisher
+    ) {
+        this.gameRepository = gameRepository;
         this.gameEventPublisher = gameEventPublisher;
     }
 
@@ -31,14 +35,11 @@ public class GameService {
      * オフラインは1つのブラウザで先手・後手が交互に操作する。
      * userTokenやWebSocket通知は使わない。
      */
+    @Transactional
     public Game createOfflineGame() {
-        Long gameId = sequence.getAndIncrement();
+        Game game = Game.createOffline(UUID.randomUUID());
 
-        Game game = Game.createOffline(gameId);
-
-        games.put(gameId, game);
-
-        return game;
+        return gameRepository.save(game);
     }
 
     /**
@@ -46,16 +47,13 @@ public class GameService {
      *
      * 作成者は先手になる。
      */
+    @Transactional
     public Game createOnlineGame(String userToken) {
         validateUserToken(userToken);
 
-        Long gameId = sequence.getAndIncrement();
+        Game game = Game.createOnline(UUID.randomUUID(), userToken);
 
-        Game game = Game.createOnline(gameId, userToken);
-
-        games.put(gameId, game);
-
-        return game;
+        return gameRepository.save(game);
     }
 
     /**
@@ -64,21 +62,21 @@ public class GameService {
      * 参加者は後手になる。
      * 参加後は影武者選択状態にする。
      */
-    public Game joinOnlineGame(Long gameId, String userToken) {
+    @Transactional
+    public Game joinOnlineGame(UUID gameId, String userToken) {
         validateUserToken(userToken);
 
         Game game = getGame(gameId);
         validateOnlineGame(game);
 
-        synchronized (game) {
-            if (userToken.equals(game.getSenteUserToken())) {
-                throw new IllegalArgumentException("作成者自身は後手として参加できません");
-            }
-
-            game.join(userToken);
+        if (userToken.equals(game.getSenteUserToken())) {
+            throw new IllegalArgumentException("作成者自身は後手として参加できません");
         }
 
-        gameEventPublisher.publishPlayerJoined(game);
+        game.join(userToken);
+        gameRepository.save(game);
+
+        afterCommit(() -> gameEventPublisher.publishPlayerJoined(game));
 
         return game;
     }
@@ -86,14 +84,10 @@ public class GameService {
     /**
      * 対局を取得する。
      */
-    public Game getGame(Long gameId) {
-        Game game = games.get(gameId);
-
-        if (game == null) {
-            throw new IllegalArgumentException("対局が見つかりません: " + gameId);
-        }
-
-        return game;
+    @Transactional(readOnly = true)
+    public Game getGame(UUID gameId) {
+        return gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("対局が見つかりません: " + gameId));
     }
 
     /**
@@ -102,8 +96,9 @@ public class GameService {
      * オフラインでは userToken がないため、
      * Controllerから PlayerType を受け取る。
      */
+    @Transactional
     public Game selectShadowOffline(
-            Long gameId,
+            UUID gameId,
             PlayerType playerType,
             String positionText
     ) {
@@ -112,9 +107,8 @@ public class GameService {
 
         Position position = SfenPositionConverter.toPosition(positionText);
 
-        synchronized (game) {
-            game.selectShadow(playerType, position);
-        }
+        game.selectShadow(playerType, position);
+        gameRepository.save(game);
 
         return game;
     }
@@ -124,8 +118,9 @@ public class GameService {
      *
      * userTokenから先手・後手を判定する。
      */
+    @Transactional
     public Game selectShadowOnline(
-            Long gameId,
+            UUID gameId,
             String userToken,
             String positionText
     ) {
@@ -136,17 +131,14 @@ public class GameService {
 
         Position position = SfenPositionConverter.toPosition(positionText);
 
-        PlayerType playerType;
+        PlayerType playerType = game.resolvePlayerType(userToken);
+        game.selectShadow(playerType, position);
+        gameRepository.save(game);
 
-        synchronized (game) {
-            playerType = game.resolvePlayerType(userToken);
-            game.selectShadow(playerType, position);
-        }
-
-        gameEventPublisher.publishShadowSelected(game, playerType);
+        afterCommit(() -> gameEventPublisher.publishShadowSelected(game, playerType));
 
         if (game.getStatus() == GameStatus.PLAYING) {
-            gameEventPublisher.publishGameStarted(game);
+            afterCommit(() -> gameEventPublisher.publishGameStarted(game));
         }
 
         return game;
@@ -158,16 +150,16 @@ public class GameService {
      * オフラインでは現在の手番のプレイヤーが指した扱いにする。
      * Game.move() 側で currentTurn を使って処理する。
      */
+    @Transactional
     public Game moveOffline(
-            Long gameId,
+            UUID gameId,
             String moveText
     ) {
         Game game = getGame(gameId);
         validateOfflineGame(game);
 
-        synchronized (game) {
-            game.move(moveText);
-        }
+        game.move(moveText);
+        gameRepository.save(game);
 
         return game;
     }
@@ -177,9 +169,13 @@ public class GameService {
      *
      * userTokenからプレイヤーを判定し、
      * 現在の手番と一致する場合だけ Game.move() を呼ぶ。
+     *
+     * 並行して同じ手数への着手が来た場合は、
+     * game_moves の UNIQUE(game_id, ply) 制約により後発が失敗する（楽観ロック）。
      */
+    @Transactional
     public Game moveOnline(
-            Long gameId,
+            UUID gameId,
             String userToken,
             String moveText
     ) {
@@ -188,20 +184,19 @@ public class GameService {
         Game game = getGame(gameId);
         validateOnlineGame(game);
 
-        synchronized (game) {
-            PlayerType playerType = game.resolvePlayerType(userToken);
+        PlayerType playerType = game.resolvePlayerType(userToken);
 
-            if (game.getCurrentTurn() != playerType) {
-                throw new IllegalArgumentException("現在の手番ではありません");
-            }
-
-            game.move(moveText);
+        if (game.getCurrentTurn() != playerType) {
+            throw new IllegalArgumentException("現在の手番ではありません");
         }
 
+        game.move(moveText);
+        gameRepository.save(game);
+
         if (game.getStatus() == GameStatus.FINISHED) {
-            gameEventPublisher.publishGameFinished(game);
+            afterCommit(() -> gameEventPublisher.publishGameFinished(game));
         } else {
-            gameEventPublisher.publishMove(game, moveText);
+            afterCommit(() -> gameEventPublisher.publishMove(game, moveText));
         }
 
         return game;
@@ -213,16 +208,16 @@ public class GameService {
      * オフラインでは userToken がないため、
      * Controllerから投了者を受け取る。
      */
+    @Transactional
     public Game resignOffline(
-            Long gameId,
+            UUID gameId,
             PlayerType playerType
     ) {
         Game game = getGame(gameId);
         validateOfflineGame(game);
 
-        synchronized (game) {
-            game.resign(playerType);
-        }
+        game.resign(playerType);
+        gameRepository.save(game);
 
         return game;
     }
@@ -232,8 +227,9 @@ public class GameService {
      *
      * userTokenから投了者を判定する。
      */
+    @Transactional
     public Game resignOnline(
-            Long gameId,
+            UUID gameId,
             String userToken
     ) {
         validateUserToken(userToken);
@@ -241,12 +237,11 @@ public class GameService {
         Game game = getGame(gameId);
         validateOnlineGame(game);
 
-        synchronized (game) {
-            PlayerType playerType = game.resolvePlayerType(userToken);
-            game.resign(playerType);
-        }
+        PlayerType playerType = game.resolvePlayerType(userToken);
+        game.resign(playerType);
+        gameRepository.save(game);
 
-        gameEventPublisher.publishGameFinished(game);
+        afterCommit(() -> gameEventPublisher.publishGameFinished(game));
 
         return game;
     }
@@ -266,6 +261,26 @@ public class GameService {
     private void validateOnlineGame(Game game) {
         if (game.getMode() != GameMode.ONLINE) {
             throw new IllegalArgumentException("オンライン対局ではありません");
+        }
+    }
+
+    /**
+     * トランザクションのコミット成功後に処理を実行する。
+     *
+     * <p>WebSocket 通知はコミット後に行う。ロールバック時
+     * （例: 楽観ロック競合）に通知が飛ぶのを防ぐ。
+     * トランザクションが無い場合は即時実行する。
+     */
+    private void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
         }
     }
 }

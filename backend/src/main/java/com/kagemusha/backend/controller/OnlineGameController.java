@@ -7,6 +7,8 @@ import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.service.GameService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/online/games")
 public class OnlineGameController {
@@ -46,7 +48,7 @@ public class OnlineGameController {
      */
     @PostMapping("/{gameId}/join")
     public GameResponse joinOnlineGame(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
         Game game = gameService.joinOnlineGame(
@@ -66,7 +68,7 @@ public class OnlineGameController {
      */
     @GetMapping("/{gameId}")
     public GameResponse getOnlineGame(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
         Game game = gameService.getGame(gameId);
@@ -85,7 +87,7 @@ public class OnlineGameController {
      */
     @PostMapping("/{gameId}/shadow")
     public GameResponse selectShadow(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken,
             @RequestBody SelectShadowRequest request
     ) {
@@ -109,7 +111,7 @@ public class OnlineGameController {
      */
     @PostMapping("/{gameId}/moves")
     public GameResponse move(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken,
             @RequestBody MoveRequest request
     ) {
@@ -132,7 +134,7 @@ public class OnlineGameController {
      */
     @PostMapping("/{gameId}/resign")
     public GameResponse resign(
-            @PathVariable Long gameId,
+            @PathVariable UUID gameId,
             @RequestHeader(USER_TOKEN_HEADER) String userToken
     ) {
         Game game = gameService.resignOnline(
