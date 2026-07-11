@@ -3,18 +3,17 @@ package com.kagemusha.backend.domain;
 /**
  * 将棋の駒の種類を表す列挙型。
  *
- * 各駒種は、SFENで使用する駒文字と、
- * 画面表示などで使用する日本語名を持つ。
+ * 各駒種は、SFENで使用する駒文字を持つ。
  */
 public enum PieceType {
-    GYOKU("K", "王"),
-    HISHA("R", "飛"),
-    KAKU("B", "角"),
-    KIN("G", "金"),
-    GIN("S", "銀"),
-    KEIMA("N", "桂"),
-    KYO("L", "香"),
-    FU("P", "歩");
+    GYOKU("K"),
+    HISHA("R"),
+    KAKU("B"),
+    KIN("G"),
+    GIN("S"),
+    KEIMA("N"),
+    KYO("L"),
+    FU("P");
 
     /**
      * SFENで使用する駒文字。
@@ -25,19 +24,12 @@ public enum PieceType {
     private final String sfenSymbol;
 
     /**
-     * 画面表示などで使用する日本語の駒名。
-     */
-    private final String displayName;
-
-    /**
      * 駒種を生成する。
      *
      * @param sfenSymbol SFENで使用する駒文字
-     * @param displayName 表示用の駒名
      */
-    PieceType(String sfenSymbol, String displayName) {
+    PieceType(String sfenSymbol) {
         this.sfenSymbol = sfenSymbol;
-        this.displayName = displayName;
     }
 
     /**
@@ -47,15 +39,6 @@ public enum PieceType {
      */
     public String getSfenSymbol() {
         return sfenSymbol;
-    }
-
-    /**
-     * 表示用の駒名を取得する。
-     *
-     * @return 日本語の駒名
-     */
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**

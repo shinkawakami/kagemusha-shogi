@@ -38,7 +38,6 @@ public class Game {
         this.currentTurn = currentTurn;
         this.capturedPieces = capturedPieces;
         this.moveNumber = moveNumber;
-        this.status = GameStatus.PLAYING;
     }
 
     public Long getId() {
@@ -65,70 +64,67 @@ public class Game {
         return status;
     }
 
-    public void setStatus(GameStatus status) {
-        this.status = status;
-    }
-
     public GameMode getMode() {
         return mode;
-    }
-
-    public void setMode(GameMode mode) {
-        this.mode = mode;
     }
 
     public String getSenteUserToken() {
         return senteUserToken;
     }
 
-    public void setSenteUserToken(String senteUserToken) {
-        this.senteUserToken = senteUserToken;
-    }
-
     public String getGoteUserToken() {
         return goteUserToken;
-    }
-
-    public void setGoteUserToken(String goteUserToken) {
-        this.goteUserToken = goteUserToken;
     }
 
     public Position getSenteShadowPosition() {
         return senteShadowPosition;
     }
 
-    public void setSenteShadowPosition(Position senteShadowPosition) {
-        this.senteShadowPosition = senteShadowPosition;
-    }
-
     public Position getGoteShadowPosition() {
         return goteShadowPosition;
-    }
-
-    public void setGoteShadowPosition(Position goteShadowPosition) {
-        this.goteShadowPosition = goteShadowPosition;
     }
 
     public PlayerType getWinner() {
         return winner;
     }
 
-    public void setWinner(PlayerType winner) {
-        this.winner = winner;
-    }
-
     public FinishReason getFinishReason() {
         return finishReason;
     }
 
-    public void setFinishReason(FinishReason finishReason) {
-        this.finishReason = finishReason;
+    /**
+     * オフライン対局を初期状態で作成する。
+     *
+     * 生成時点で影武者選択状態にする。
+     */
+    public static Game createOffline(Long id) {
+        Game game = createInitial(id);
+        game.mode = GameMode.OFFLINE;
+        game.status = GameStatus.SELECTING_SHADOW;
+
+        return game;
     }
 
     /**
-     * 初期状態のゲームを作成する
+     * オンライン対局を初期状態で作成する。
+     *
+     * 作成者を先手として登録し、相手の参加を待つ状態にする。
      */
-    public static Game createInitialGame(Long id) {
+    public static Game createOnline(Long id, String senteUserToken) {
+        Game game = createInitial(id);
+        game.mode = GameMode.ONLINE;
+        game.status = GameStatus.WAITING;
+        game.senteUserToken = senteUserToken;
+
+        return game;
+    }
+
+    /**
+     * 初期局面の盤面・手番・持ち駒・手数を持つゲームを生成する。
+     *
+     * モード・状態・トークンは各ファクトリメソッドで確定させる。
+     */
+    private static Game createInitial(Long id) {
         Board board = SfenConverter.toBoard(SfenConstants.INITIAL_SFEN);
         PlayerType currentTurn = SfenConverter.extractCurrentTurn(SfenConstants.INITIAL_SFEN);
         CapturedPieces capturedPieces = SfenConverter.extractCapturedPieces(SfenConstants.INITIAL_SFEN);
@@ -140,6 +136,20 @@ public class Game {
                 currentTurn,
                 capturedPieces,
                 moveNumber);
+    }
+
+    /**
+     * オンライン対局に後手として参加する。
+     *
+     * 相手待ち状態のときだけ参加でき、参加後は影武者選択状態にする。
+     */
+    public void join(String goteUserToken) {
+        if (status != GameStatus.WAITING) {
+            throw new IllegalArgumentException("この対局には参加できません");
+        }
+
+        this.goteUserToken = goteUserToken;
+        this.status = GameStatus.SELECTING_SHADOW;
     }
 
     /**
@@ -222,16 +232,6 @@ public class Game {
     }
 
     /**
-     * 盤面部分だけのSFENを返す。
-     *
-     * 例:
-     * lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL
-     */
-    public String getBoardSfen() {
-        return SfenConverter.fromBoardOnly(board);
-    }
-
-    /**
      * ゲーム状態全体のSFENを返す。
      *
      * 例:
@@ -288,7 +288,7 @@ public class Game {
         }
     }
 
-    public Position getShadowPosition(PlayerType playerType) {
+    private Position getShadowPosition(PlayerType playerType) {
         return playerType == PlayerType.SENTE
                 ? senteShadowPosition
                 : goteShadowPosition;

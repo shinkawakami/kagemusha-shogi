@@ -1,24 +1,33 @@
 package com.kagemusha.backend.controller.response;
 
-import com.kagemusha.backend.domain.Board;
 import com.kagemusha.backend.domain.FinishReason;
 import com.kagemusha.backend.domain.Game;
 import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
+import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 
 public class GameResponse {
 
     private Long gameId;
-    private Board board;
-    private PlayerType currentTurn;
+
+    /**
+     * 対局状態全体のSFEN文字列（盤面・手番・持ち駒・手数を含む）。
+     *
+     * フロントエンドはこの文字列をパースして盤面・手番・持ち駒などを描画する。
+     */
+    private String sfen;
+
     private GameStatus status;
-    private int moveNumber;
 
     private PlayerType myPlayerType;
-    private Position myShadowPosition;
-    private boolean myShadowSelected;
-    private boolean opponentShadowSelected;
+
+    /**
+     * 自分の影武者の位置（SFEN/USI形式の座標文字列。例 "7g"）。
+     *
+     * 未選択の場合は null。相手の影武者位置は返さない。
+     */
+    private String myShadowPosition;
 
     private boolean senteShadowSelected;
     private boolean goteShadowSelected;
@@ -32,22 +41,17 @@ public class GameResponse {
      * オフラインでは userToken がないので、
      * myPlayerType / myShadowPosition は返さない。
      *
-     * 影武者の位置も返さない。
-     * 返すのは「選択済みかどうか」だけ。
+     * 影武者が選択済みかどうかは senteShadowSelected / goteShadowSelected で表す。
      */
     public static GameResponse fromOffline(Game game) {
         GameResponse response = new GameResponse();
 
         response.gameId = game.getId();
-        response.board = game.getBoard();
-        response.currentTurn = game.getCurrentTurn();
+        response.sfen = game.getSfen();
         response.status = game.getStatus();
-        response.moveNumber = game.getMoveNumber();
 
         response.myPlayerType = null;
         response.myShadowPosition = null;
-        response.myShadowSelected = false;
-        response.opponentShadowSelected = false;
 
         response.senteShadowSelected = game.getSenteShadowPosition() != null;
         response.goteShadowSelected = game.getGoteShadowPosition() != null;
@@ -69,29 +73,20 @@ public class GameResponse {
     public static GameResponse fromOnline(Game game, String userToken) {
         PlayerType myPlayerType = game.resolvePlayerType(userToken);
 
-        Position myShadowPosition;
-        Position opponentShadowPosition;
-
-        if (myPlayerType == PlayerType.SENTE) {
-            myShadowPosition = game.getSenteShadowPosition();
-            opponentShadowPosition = game.getGoteShadowPosition();
-        } else {
-            myShadowPosition = game.getGoteShadowPosition();
-            opponentShadowPosition = game.getSenteShadowPosition();
-        }
+        Position myShadowPosition = myPlayerType == PlayerType.SENTE
+                ? game.getSenteShadowPosition()
+                : game.getGoteShadowPosition();
 
         GameResponse response = new GameResponse();
 
         response.gameId = game.getId();
-        response.board = game.getBoard();
-        response.currentTurn = game.getCurrentTurn();
+        response.sfen = game.getSfen();
         response.status = game.getStatus();
-        response.moveNumber = game.getMoveNumber();
 
         response.myPlayerType = myPlayerType;
-        response.myShadowPosition = myShadowPosition;
-        response.myShadowSelected = myShadowPosition != null;
-        response.opponentShadowSelected = opponentShadowPosition != null;
+        response.myShadowPosition = myShadowPosition == null
+                ? null
+                : SfenPositionConverter.toSfen(myShadowPosition);
 
         response.senteShadowSelected = game.getSenteShadowPosition() != null;
         response.goteShadowSelected = game.getGoteShadowPosition() != null;
@@ -106,36 +101,20 @@ public class GameResponse {
         return gameId;
     }
 
-    public Board getBoard() {
-        return board;
-    }
-
-    public PlayerType getCurrentTurn() {
-        return currentTurn;
+    public String getSfen() {
+        return sfen;
     }
 
     public GameStatus getStatus() {
         return status;
     }
 
-    public int getMoveNumber() {
-        return moveNumber;
-    }
-
     public PlayerType getMyPlayerType() {
         return myPlayerType;
     }
 
-    public Position getMyShadowPosition() {
+    public String getMyShadowPosition() {
         return myShadowPosition;
-    }
-
-    public boolean isMyShadowSelected() {
-        return myShadowSelected;
-    }
-
-    public boolean isOpponentShadowSelected() {
-        return opponentShadowSelected;
     }
 
     public boolean isSenteShadowSelected() {

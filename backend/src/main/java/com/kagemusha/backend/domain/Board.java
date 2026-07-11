@@ -54,38 +54,4 @@ public class Board {
     public void removePiece(Position position) {
         squares[position.toArrayRow()][position.toArrayCol()] = null;
     }
-
-    /**
-     * 盤面のマス配列を取得する。
-     *
-     * 現在は内部配列をそのまま返しているため、呼び出し側から盤面を書き換え可能。
-     * 将来的に不変性を強めたい場合は、コピーを返す設計も検討する。
-     *
-     * @return 9×9 の駒配列
-     */
-    public Piece[][] getSquares() {
-        return squares;
-    }
-
-    /**
-     * 指定した移動元から移動先へ駒を移動する。
-     *
-     * 移動元の駒を移動先に配置し、移動元のマスを空にする。
-     * 移動先に駒がある場合は上書きされるため、味方駒との衝突判定や
-     * 駒の取得処理は、このメソッドを呼び出す前に行う想定。
-     *
-     * @param from 移動元の位置
-     * @param to 移動先の位置
-     * @throws IllegalArgumentException 移動元に駒が存在しない場合
-     */
-    public void movePiece(Position from, Position to) {
-        Piece movingPiece = getPiece(from);
-
-        if (movingPiece == null) {
-            throw new IllegalArgumentException("移動元に駒がありません");
-        }
-
-        setPiece(to, movingPiece);
-        removePiece(from);
-    }
 }

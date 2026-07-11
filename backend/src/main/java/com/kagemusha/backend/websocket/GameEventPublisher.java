@@ -16,7 +16,7 @@ public class GameEventPublisher {
 
     public void publishPlayerJoined(Game game) {
         GameEvent event = new GameEvent(
-                GameEventType.PLAYER_JOINED.name(),
+                GameEventType.PLAYER_JOINED,
                 game.getId(),
                 game.getStatus(),
                 game.getCurrentTurn(),
@@ -31,7 +31,7 @@ public class GameEventPublisher {
 
     public void publishShadowSelected(Game game, PlayerType selectedPlayer) {
         GameEvent event = new GameEvent(
-                GameEventType.SHADOW_SELECTED.name(),
+                GameEventType.SHADOW_SELECTED,
                 game.getId(),
                 game.getStatus(),
                 game.getCurrentTurn(),
@@ -46,7 +46,7 @@ public class GameEventPublisher {
 
     public void publishGameStarted(Game game) {
         GameEvent event = new GameEvent(
-                GameEventType.GAME_STARTED.name(),
+                GameEventType.GAME_STARTED,
                 game.getId(),
                 game.getStatus(),
                 game.getCurrentTurn(),
@@ -61,7 +61,7 @@ public class GameEventPublisher {
 
     public void publishMove(Game game, String lastMove) {
         GameEvent event = new GameEvent(
-                GameEventType.MOVE.name(),
+                GameEventType.MOVE,
                 game.getId(),
                 game.getStatus(),
                 game.getCurrentTurn(),
@@ -76,7 +76,7 @@ public class GameEventPublisher {
 
     public void publishGameFinished(Game game) {
         GameEvent event = new GameEvent(
-                GameEventType.GAME_FINISHED.name(),
+                GameEventType.GAME_FINISHED,
                 game.getId(),
                 game.getStatus(),
                 game.getCurrentTurn(),

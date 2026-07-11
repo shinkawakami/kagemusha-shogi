@@ -47,11 +47,4 @@ public class CapturedPieces {
     public int count(PlayerType owner, PieceType pieceType) {
         return pieces.get(owner).getOrDefault(pieceType, 0);
     }
-
-    /**
-     * 指定プレイヤーの持ち駒一覧を取得する
-     */
-    public Map<PieceType, Integer> getPieces(PlayerType owner) {
-        return new EnumMap<>(pieces.get(owner));
-    }
 }

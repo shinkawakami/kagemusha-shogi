@@ -32,4 +32,19 @@ public class SfenPositionConverter {
 
         return new Position(row, col);
     }
+
+    /**
+     * Position を SFEN/USI形式の座標文字列に変換する。
+     *
+     * toPosition の逆変換。
+     *
+     * 例:
+     * (row=7, col=3) → "7g"
+     */
+    public static String toSfen(Position position) {
+        int file = 10 - position.getCol();
+        char rankChar = (char) ('a' + position.getRow() - 1);
+
+        return "" + file + rankChar;
+    }
 }

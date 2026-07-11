@@ -5,6 +5,7 @@ import com.kagemusha.backend.domain.GameMode;
 import com.kagemusha.backend.domain.GameStatus;
 import com.kagemusha.backend.domain.PlayerType;
 import com.kagemusha.backend.domain.Position;
+import com.kagemusha.backend.domain.sfen.SfenPositionConverter;
 import com.kagemusha.backend.websocket.GameEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -33,9 +34,7 @@ public class GameService {
     public Game createOfflineGame() {
         Long gameId = sequence.getAndIncrement();
 
-        Game game = Game.createInitialGame(gameId);
-        game.setMode(GameMode.OFFLINE);
-        game.setStatus(GameStatus.SELECTING_SHADOW);
+        Game game = Game.createOffline(gameId);
 
         games.put(gameId, game);
 
@@ -52,10 +51,7 @@ public class GameService {
 
         Long gameId = sequence.getAndIncrement();
 
-        Game game = Game.createInitialGame(gameId);
-        game.setMode(GameMode.ONLINE);
-        game.setStatus(GameStatus.WAITING);
-        game.setSenteUserToken(userToken);
+        Game game = Game.createOnline(gameId, userToken);
 
         games.put(gameId, game);
 
@@ -75,16 +71,11 @@ public class GameService {
         validateOnlineGame(game);
 
         synchronized (game) {
-            if (game.getStatus() != GameStatus.WAITING) {
-                throw new IllegalArgumentException("この対局には参加できません");
-            }
-
             if (userToken.equals(game.getSenteUserToken())) {
                 throw new IllegalArgumentException("作成者自身は後手として参加できません");
             }
 
-            game.setGoteUserToken(userToken);
-            game.setStatus(GameStatus.SELECTING_SHADOW);
+            game.join(userToken);
         }
 
         gameEventPublisher.publishPlayerJoined(game);
@@ -119,7 +110,7 @@ public class GameService {
         Game game = getGame(gameId);
         validateOfflineGame(game);
 
-        Position position = parsePosition(positionText);
+        Position position = SfenPositionConverter.toPosition(positionText);
 
         synchronized (game) {
             game.selectShadow(playerType, position);
@@ -143,7 +134,7 @@ public class GameService {
         Game game = getGame(gameId);
         validateOnlineGame(game);
 
-        Position position = parsePosition(positionText);
+        Position position = SfenPositionConverter.toPosition(positionText);
 
         PlayerType playerType;
 
@@ -276,41 +267,5 @@ public class GameService {
         if (game.getMode() != GameMode.ONLINE) {
             throw new IllegalArgumentException("オンライン対局ではありません");
         }
-    }
-
-    /**
-     * SFEN/USI形式の座標を Position に変換する。
-     *
-     * 例:
-     * 7g
-     * 5i
-     * 2b
-     */
-    private Position parsePosition(String text) {
-        if (text == null || text.length() != 2) {
-            throw new IllegalArgumentException("座標の形式が不正です: " + text);
-        }
-
-        char fileChar = text.charAt(0);
-        char rankChar = text.charAt(1);
-
-        if (fileChar < '1' || fileChar > '9') {
-            throw new IllegalArgumentException("筋の指定が不正です: " + text);
-        }
-
-        if (rankChar < 'a' || rankChar > 'i') {
-            throw new IllegalArgumentException("段の指定が不正です: " + text);
-        }
-
-        int file = Character.getNumericValue(fileChar);
-        int row = rankChar - 'a' + 1;
-
-        /*
-         * SFEN/USIの座標では右上が1a、左上が9a。
-         * Boardの配列は左から右へ col=1〜9 なので反転する。
-         */
-        int col = 10 - file;
-
-        return new Position(row, col);
     }
 }

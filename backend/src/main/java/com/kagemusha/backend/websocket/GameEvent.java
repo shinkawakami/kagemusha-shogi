@@ -6,7 +6,7 @@ import com.kagemusha.backend.domain.PlayerType;
 
 public class GameEvent {
 
-    private String type;
+    private GameEventType type;
     private Long gameId;
     private GameStatus status;
     private PlayerType currentTurn;
@@ -16,7 +16,7 @@ public class GameEvent {
     private FinishReason finishReason;
 
     public GameEvent(
-            String type,
+            GameEventType type,
             Long gameId,
             GameStatus status,
             PlayerType currentTurn,
@@ -35,7 +35,7 @@ public class GameEvent {
         this.finishReason = finishReason;
     }
 
-    public String getType() {
+    public GameEventType getType() {
         return type;
     }
 
