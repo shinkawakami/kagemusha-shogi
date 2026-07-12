@@ -14,7 +14,6 @@ export default function MatchmakingScreen() {
 
   const handleStartMatching = async () => {
     const data = await createMatch()
-
     router.push(`/games/${data.data.gameId}`)
   }
 
