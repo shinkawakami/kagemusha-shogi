@@ -58,3 +58,25 @@ export async function movePiece(gameId: string, move: string) {
   
   return res.json()
 }
+
+/**
+ * 投了API
+ * 
+ * @param gameId ゲームID
+ * @param player 投了するプレイヤー ('SENTE' = 先手, 'GOTE' = 後手)
+ * @returns
+ * @throws Error
+ */
+export async function resignGame(gameId: string, player: 'SENTE' | 'GOTE') {
+  const res = await fetch(`${BASE_URL}/api/games/${gameId}/lose`, {
+    method: 'POST',
+    body: JSON.stringify({ player, reason: 'RESIGN' }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+  if (!res.ok) {
+    throw new Error('投了失敗')
+  }
+
+  return res.json()
+}
